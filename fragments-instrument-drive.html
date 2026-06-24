@@ -1,0 +1,1008 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#f3ede1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fragments">
+<link rel="manifest" href='data:application/manifest+json,{"name":"Fragments","short_name":"Fragments","start_url":".","display":"standalone","background_color":"%23f3ede1","theme_color":"%23f3ede1","icons":[{"src":"data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22%3E%3Crect width=%22192%22 height=%22192%22 fill=%22%23221f19%22/%3E%3Ccircle cx=%2296%22 cy=%2296%22 r=%2244%22 fill=%22none%22 stroke=%22%23a9601f%22 stroke-width=%228%22/%3E%3Ccircle cx=%2296%22 cy=%2296%22 r=%228%22 fill=%22%23a9601f%22/%3E%3C/svg%3E","sizes":"192x192","type":"image/svg+xml"}]}'>
+<title>Fragments — a lessons-from-life capture instrument</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --panel:#ece3d2; --ink:#221f19; --ink-soft:#5e584c;
+    --line:#d6c9b0; --ochre:#a9601f; --ochre-soft:rgba(169,96,31,.13);
+    --slate:#566668; --slate-soft:rgba(86,102,104,.13);
+    --serif:"Newsreader",Georgia,serif; --display:"Fraunces",Georgia,serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--paper); color:var(--ink); font-family:var(--serif);
+    font-size:17px; line-height:1.5; -webkit-text-size-adjust:100%;
+    background-image:radial-gradient(circle at 12% 8%, rgba(169,96,31,.05), transparent 45%),
+                     radial-gradient(circle at 88% 92%, rgba(86,102,104,.06), transparent 50%);
+  }
+  .wrap{max-width:500px;margin:0 auto;padding:26px 20px 90px}
+  header{margin-bottom:8px;opacity:0;animation:rise .6s .05s both}
+  h1{font-family:var(--display);font-weight:500;font-size:30px;line-height:1.05;margin:0;letter-spacing:-.01em}
+  .sub{font-style:italic;color:var(--ink-soft);font-size:15.5px;margin:6px 0 0}
+  nav{display:flex;gap:2px;margin:22px 0 4px;border-bottom:1px solid var(--line)}
+  nav button{flex:1;background:none;border:0;font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--ink-soft);padding:10px 2px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  nav button.on{color:var(--ink);border-bottom-color:var(--ochre)}
+  .panel{display:none;animation:rise .45s both}
+  .panel.on{display:block}
+  .q{font-family:var(--display);font-size:18px;font-weight:500;margin:26px 0 10px;line-height:1.25}
+  .q .n{font-family:var(--mono);font-size:11px;color:var(--ochre);letter-spacing:.1em;display:block;margin-bottom:5px;text-transform:uppercase}
+  .promptpick{display:flex;flex-direction:column;gap:8px}
+  .promptpick button{text-align:left;font-family:var(--serif);font-size:15.5px;line-height:1.4;
+    background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:13px 14px;color:var(--ink);cursor:pointer;transition:.15s}
+  .promptpick button.on{border-color:var(--ochre);background:var(--ochre-soft);box-shadow:inset 0 0 0 1px var(--ochre)}
+  textarea{width:100%;min-height:120px;resize:vertical;font-family:var(--serif);font-size:16.5px;line-height:1.5;
+    background:#fbf7ee;border:1px solid var(--line);border-radius:3px;padding:13px;color:var(--ink)}
+  textarea:focus,.promptpick button:focus-visible,input:focus{outline:2px solid var(--ochre);outline-offset:1px}
+  .note{font-style:italic;color:var(--ink-soft);font-size:13.5px;margin-top:7px}
+  svg.triad{width:100%;max-width:340px;display:block;margin:4px auto;touch-action:none}
+  .triad-lbl{font-family:var(--mono);font-size:10.5px;fill:var(--ink-soft);letter-spacing:.02em}
+  .readout{font-family:var(--mono);font-size:11px;color:var(--ink-soft);text-align:center;margin-top:2px;min-height:14px}
+  .dyad{margin-top:6px}
+  .dyad .ends{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--ink-soft);margin-bottom:3px;gap:8px}
+  .dyad .ends span:last-child{text-align:right}
+  input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:3px;border-radius:2px;background:var(--line);margin:6px 0}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+    background:var(--paper);border:2px solid var(--ochre);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+  input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--paper);border:2px solid var(--ochre);cursor:pointer}
+  .disp input[type=range]::-webkit-slider-thumb{border-color:var(--slate)}
+  .disp input[type=range]::-moz-range-thumb{border-color:var(--slate)}
+  .save{width:100%;margin-top:28px;font-family:var(--mono);font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;
+    background:var(--ink);color:var(--paper);border:0;border-radius:3px;padding:15px;cursor:pointer;transition:.15s}
+  .salient{width:100%;margin-top:22px;font-family:var(--mono);font-size:11.5px;letter-spacing:.05em;
+    background:var(--paper);border:1px solid var(--line);color:var(--ink-soft);border-radius:3px;padding:12px;cursor:pointer;transition:.15s}
+  .salient.on{border-color:var(--ochre);background:var(--ochre-soft);color:var(--ink)}
+  .save:active{transform:translateY(1px)}
+  .save.done{background:var(--ochre)}
+  .flash{text-align:center;font-style:italic;color:var(--ink-soft);min-height:20px;margin-top:10px;font-size:14px}
+  .flash .undo{font-family:var(--mono);font-style:normal;font-size:11px;color:var(--slate);text-decoration:underline;cursor:pointer;margin-left:8px}
+  .rdo{font-family:var(--mono);font-size:10.5px;color:var(--ink-soft);text-align:center;margin-top:3px;min-height:13px}
+  input[type=range].untouched{opacity:.32}
+  .softnote{font-style:italic;color:var(--ink-soft);font-size:13px;margin:14px 0 2px}
+  .count{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);letter-spacing:.06em;text-transform:uppercase;margin:18px 0 4px}
+  .monthnote{font-family:var(--mono);font-size:11px;color:var(--slate);background:var(--slate-soft);border-radius:3px;padding:10px 12px;line-height:1.55;margin-top:22px}
+  .verselrow{display:flex;align-items:center;gap:8px;margin:16px 0 2px;font-family:var(--mono);font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em}
+  select{font-family:var(--mono);font-size:11px;background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:5px 7px;color:var(--ink)}
+  .gate{margin-top:18px}
+  .gate .q{margin-top:0}
+  .reveal{width:100%;margin-top:14px;font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    background:var(--ink);color:var(--paper);border:0;border-radius:3px;padding:14px;cursor:pointer}
+  #revealed{display:none}
+  .predecho{font-style:italic;color:var(--ink-soft);font-size:14px;background:var(--panel);border-left:2px solid var(--slate);padding:10px 13px;border-radius:0 3px 3px 0;margin:18px 0}
+  .plotcard{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:16px 14px;margin-bottom:16px}
+  .plotcard h3{font-family:var(--display);font-weight:500;font-size:16px;margin:0 0 2px}
+  .plotcard p{margin:0 0 8px;font-size:13.5px;color:var(--ink-soft);font-style:italic}
+  svg.plot{width:100%;display:block}
+  .axtog{display:flex;gap:6px;justify-content:center;margin-bottom:6px}
+  .axtog button{font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;background:var(--paper);
+    border:1px solid var(--line);border-radius:3px;padding:5px 9px;color:var(--ink-soft);cursor:pointer}
+  .axtog button.on{border-color:var(--ochre);color:var(--ink);background:var(--ochre-soft)}
+  .legend{display:flex;gap:16px;justify-content:center;font-family:var(--mono);font-size:10.5px;color:var(--ink-soft);margin-top:6px}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .read{font-size:14.5px;line-height:1.55;background:var(--ochre-soft);border-left:2px solid var(--ochre);padding:12px 14px;border-radius:0 3px 3px 0;margin-bottom:18px}
+  .entry{border-bottom:1px solid var(--line);padding:13px 0}
+  .entry .meta{font-family:var(--mono);font-size:10.5px;color:var(--ink-soft);letter-spacing:.04em;display:flex;justify-content:space-between;gap:10px}
+  .entry .txt{margin:6px 0 7px;font-size:15.5px;line-height:1.45}
+  .entry .tags{font-family:var(--mono);font-size:10.5px;color:var(--ink-soft);line-height:1.7}
+  .entry .tags b{color:var(--ink);font-weight:500}
+  .del{background:none;border:0;color:var(--slate);font-family:var(--mono);font-size:10.5px;cursor:pointer;text-decoration:underline;padding:0}
+  .empty{font-style:italic;color:var(--ink-soft);padding:24px 0;text-align:center}
+  .tunefield{margin:16px 0}
+  .tunefield span{font-family:var(--mono);font-size:10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px}
+  .tunefield input{width:100%;font-family:var(--serif);font-size:15px;background:#fbf7ee;border:1px solid var(--line);border-radius:3px;padding:9px 10px;color:var(--ink)}
+  .pair{display:flex;gap:8px}
+  .pair .tunefield{flex:1}
+  details{margin-top:22px;border-top:1px solid var(--line);padding-top:14px}
+  summary{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);cursor:pointer}
+  details p{font-size:14px;line-height:1.55;color:var(--ink-soft)}
+  details p b{color:var(--ink);font-weight:500;font-style:normal}
+  .exportbtn{width:100%;font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;
+    background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:3px;padding:13px;cursor:pointer;margin-top:10px}
+  .warn{font-family:var(--mono);font-size:10.5px;color:var(--slate);background:var(--slate-soft);border-radius:3px;padding:8px 10px;margin-top:14px;line-height:1.5}
+  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes drop{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Fragments</h1>
+    <p class="sub">Catch a moment when it grabs you. Mark what you can. Read the pattern later — not on a clock.</p>
+  </header>
+
+  <nav>
+    <button class="on" data-tab="capture">Capture</button>
+    <button data-tab="read">Read</button>
+    <button data-tab="tune">Tune</button>
+    <button data-tab="export">Export</button>
+  </nav>
+
+  <!-- CAPTURE -->
+  <section class="panel on" id="capture">
+    <div class="q"><span class="n">01 · prompt</span>Pick the one you can answer — or skip straight to writing.</div>
+    <div class="promptpick" id="prompts">
+      <button data-p="a" id="promptA"></button>
+      <button data-p="b" id="promptB"></button>
+    </div>
+    <p class="note" style="margin-top:6px">Prompt B catches the moments you can't yet explain — those are the weak signals, and they tend to matter most. Lean toward it.</p>
+
+    <div class="q"><span class="n">02 · fragment</span>Tell what happened.</div>
+    <textarea id="frag" placeholder="Just the moment. Not what it meant. (Tap your keyboard's mic and talk, if that's easier.)"></textarea>
+    <p class="note">No “what I learned” field, by design — the pattern shows up later, across many fragments. Everything below this is optional: skip any signifier you can't read today. Just the words is real data.</p>
+
+    <div class="q"><span class="n">03 · responding to</span>In this moment, what were you mostly responding to?</div>
+    <svg class="triad" id="t1" viewBox="0 0 300 300" aria-label="triad"></svg>
+    <div class="readout" id="t1r"></div>
+
+    <div class="q"><span class="n">04 · agency</span>Looking back, where did this sit?</div>
+    <svg class="triad" id="tAg" viewBox="0 0 300 300" aria-label="agency triad"></svg>
+    <div class="readout" id="tAgr"></div>
+
+    <div class="q"><span class="n">05 · grain</span>And it was—</div>
+    <div class="dyad"><div class="ends"><span id="foL"></span><span id="foR"></span></div>
+      <input type="range" id="d_forced" min="0" max="100" value="50"></div>
+
+    <div class="q"><span class="n">06 · still live</span>Right now it feels—</div>
+    <div class="dyad"><div class="ends"><span id="opL"></span><span id="opR"></span></div>
+      <input type="range" id="d_open" min="0" max="100" value="50"></div>
+
+    <div class="q"><span class="n">07 · energy</span>Afterwards I felt—</div>
+    <div class="dyad"><div class="ends"><span id="enL"></span><span id="enR"></span></div>
+      <input type="range" id="d_energy" min="0" max="100" value="50"></div>
+
+    <div class="q"><span class="n">08 · service</span>This moment was mostly in service of—</div>
+    <svg class="triad" id="tWh" viewBox="0 0 300 300" aria-label="service triad"></svg>
+    <div class="readout" id="tWhr"></div>
+
+    <div class="q"><span class="n">09 · disposition</span>More moments like this, or fewer?</div>
+    <div class="dyad disp"><div class="ends"><span id="diL"></span><span id="diR"></span></div>
+      <input type="range" id="d_disp" min="0" max="100" value="50"></div>
+
+    <button class="salient" id="salient" type="button" aria-pressed="false">★ This one matters — I'll remember it</button>
+    <p class="note">Your own flag, in your own reckoning. Separate from the sliders: it surfaces the moments you marked, whatever the pattern says.</p>
+
+    <button class="save" id="save">Keep this</button>
+    <div class="flash" id="flash"></div>
+
+    <details>
+      <summary>What this instrument is — and isn't</summary>
+      <p>This borrows Snowden's SenseMaker grammar — an open prompt, then you signify your own story with triads and sliders rather than interpreting it — and bends it to a single life. <b>That bend has a cost.</b> With one person signifying, self-interpretation can't correct your bias the way it does across a crowd. The repair is a real person: have someone you trust place a few of your fragments in their <i>own</i> words first, then look at where their reading diverges from yours.</p>
+      <p><b>No schedule, no streak, no quota.</b> Capture when a moment grabs you — five some days, none on others; zero isn't a lapse. Form stays the same every time (that's the calm part); when and how often is entirely yours. This is externalised memory, an accommodation — you don't have to hold the shape of your life in working memory; the instrument holds it and shows you later.</p>
+      <p>The Read tab is gated behind a written prediction — best done when a pile has built up or you feel foggy, not daily. You're hoping to be <i>surprised</i>; if every read confirms your guess, the prompt is too leading. Agency and service are <b>triads</b>, not sliders, because each holds three real things that don't reduce to a line. The <b>★ this matters</b> flag is your own signal, surfaced on its own. The Read tab also shows a <b>vector</b> — which way the good moments are drifting — as a direction to notice, never a score to chase. The grammar is Snowden's; treating your own moments as the population, the prediction gate, the salience flag, the vector read, and the skip-friendly framing are a synthesis on top of his method.</p>
+    </details>
+  </section>
+
+  <!-- READ -->
+  <section class="panel" id="read">
+    <div class="monthnote">Best read when a pile has built up, or when you feel foggy about where you're going — not on a clock. Predict first, then look. You're hoping to be surprised.</div>
+
+    <div class="verselrow"><span>showing</span>
+      <select id="verSel"><option value="current">current version</option><option value="all">all versions</option></select>
+      <span id="verNote"></span>
+    </div>
+
+    <div class="gate" id="gate">
+      <div class="q"><span class="n">surprise check</span>Before you look, where do you expect the “more like this” fragments to cluster — and on which conditions?</div>
+      <textarea id="predText" placeholder="My guess: more-of moments cluster at…"></textarea>
+      <button class="reveal" id="revealBtn">Reveal the pattern</button>
+    </div>
+
+    <div id="revealed">
+      <div class="predecho" id="predEcho"></div>
+      <div class="count" id="fcount">— fragments</div>
+      <div id="readbox"></div>
+
+      <div class="plotcard">
+        <h3 id="triHead">Responding to</h3>
+        <p>Where do the moments you want <i>more</i> of land?</p>
+        <svg class="plot" id="plotTri" viewBox="0 0 300 290"></svg>
+      </div>
+
+      <div class="plotcard">
+        <h3>Agency</h3>
+        <p>Constraint, affordance, initiative — where do the “more like this” moments sit?</p>
+        <svg class="plot" id="plotAg" viewBox="0 0 300 290"></svg>
+      </div>
+
+      <div class="plotcard">
+        <h3>Service</h3>
+        <p>Self, others, the work or place — who were the good moments for?</p>
+        <svg class="plot" id="plotWh" viewBox="0 0 300 290"></svg>
+      </div>
+
+      <div class="plotcard">
+        <h3>Conditions</h3>
+        <p>Pick the horizontal axis. Up = energy. Colour = disposition.</p>
+        <div class="axtog"><button data-ax="forced" class="on">grain</button><button data-ax="open">still-live</button></div>
+        <svg class="plot" id="plotXY" viewBox="0 0 300 300"></svg>
+        <div class="legend"><span><i style="background:var(--ochre)"></i>more like this</span><span><i style="background:var(--slate)"></i>fewer like this</span></div>
+      </div>
+
+      <div class="plotcard" id="vectorCard">
+        <h3>Vector — which way it's moving</h3>
+        <p>The “more like this” centre of gravity, earlier half → recent half. The arrow is direction of travel, not a score.</p>
+        <svg class="plot" id="plotVec" viewBox="0 0 300 300"></svg>
+        <div class="rdo" id="vecRead"></div>
+      </div>
+
+      <div class="count">fragments</div>
+      <div id="list"></div>
+    </div>
+  </section>
+
+  <!-- TUNE -->
+  <section class="panel" id="tune">
+    <p style="font-style:italic;color:var(--ink-soft);margin-top:22px">Edit the signifiers to fit your life. Any change stamps a new version, so old fragments keep their original meaning and the read can hold the eras apart. Don't tune often — a moving ruler measures nothing.</p>
+    <div class="tunefield"><span>prompt A</span><input id="c_pA"></div>
+    <div class="tunefield"><span>prompt B</span><input id="c_pB"></div>
+    <div class="tunefield"><span>triad · top corner</span><input id="c_t0"></div>
+    <div class="tunefield"><span>triad · left corner</span><input id="c_t1"></div>
+    <div class="tunefield"><span>triad · right corner</span><input id="c_t2"></div>
+    <div class="tunefield"><span>agency triad · constraint</span><input id="c_ag0"></div>
+    <div class="tunefield"><span>agency triad · affordance</span><input id="c_ag1"></div>
+    <div class="tunefield"><span>agency triad · initiative</span><input id="c_ag2"></div>
+    <div class="pair"><div class="tunefield"><span>grain · left</span><input id="c_foL"></div><div class="tunefield"><span>grain · right</span><input id="c_foR"></div></div>
+    <div class="pair"><div class="tunefield"><span>still-live · left</span><input id="c_opL"></div><div class="tunefield"><span>still-live · right</span><input id="c_opR"></div></div>
+    <div class="pair"><div class="tunefield"><span>energy · left</span><input id="c_enL"></div><div class="tunefield"><span>energy · right</span><input id="c_enR"></div></div>
+    <div class="tunefield"><span>service triad · self</span><input id="c_wh0"></div>
+    <div class="tunefield"><span>service triad · others</span><input id="c_wh1"></div>
+    <div class="tunefield"><span>service triad · the work or place</span><input id="c_wh2"></div>
+    <div class="pair"><div class="tunefield"><span>disposition · left</span><input id="c_diL"></div><div class="tunefield"><span>disposition · right</span><input id="c_diR"></div></div>
+    <button class="save" id="tuneSave">Save signifiers</button>
+    <div class="flash" id="tflash"></div>
+  </section>
+
+  <!-- EXPORT -->
+  <section class="panel" id="export">
+
+    <div id="syncBox" style="border:1px solid var(--line);border-radius:5px;padding:14px 15px;margin-top:22px">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px">
+        <span id="syncDot" style="width:10px;height:10px;border-radius:50%;background:var(--ink-soft);flex:none"></span>
+        <b style="font-family:var(--mono);font-size:12px;letter-spacing:.04em" id="syncLabel">Local only</b>
+        <span id="syncWhen" style="font-size:11px;color:var(--ink-soft);margin-left:auto"></span>
+      </div>
+      <p id="syncMsg" style="font-size:12.5px;color:var(--ink-soft);line-height:1.5;margin:0 0 10px">Your fragments are saved on this device. Connect Google Drive to keep an off-phone copy that syncs across devices and survives anything happening to this one.</p>
+      <div id="syncConnect">
+        <input id="gClientId" placeholder="Google OAuth Client ID" style="width:100%;box-sizing:border-box;font-family:var(--mono);font-size:11px;padding:9px;border:1px solid var(--line);border-radius:3px;margin-bottom:8px">
+        <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-soft);margin-bottom:9px"><input type="checkbox" id="gCsv" checked> also keep a spreadsheet-shaped <b>fragments.csv</b> in Drive</label>
+        <button class="exportbtn" id="gConnect" style="margin:0">Connect Google Drive</button>
+        <p style="font-size:11px;color:var(--ink-soft);margin:8px 0 0">One-time setup. You'll need a free Google OAuth Client ID — the tool's help notes, or whoever set this up for you, has the steps.</p>
+      </div>
+      <div id="syncManage" style="display:none">
+        <button class="exportbtn" id="gSyncNow" style="margin:0 6px 0 0">Sync now</button>
+        <button class="exportbtn" id="gDisconnect" style="margin:0;background:var(--paper);color:var(--cf-soft,#9a4a2a);border:1px solid var(--line)">Disconnect</button>
+      </div>
+    </div>
+
+    <p style="font-style:italic;color:var(--ink-soft);margin-top:22px">Pull everything out as data, or load a previous export back in. Triad values are the three proportions (0–1); dyads and disposition are 0–100; <b>sv</b> is the signifier version each fragment was captured under.</p>
+    <button class="exportbtn" id="dlJson">Download JSON (full backup)</button>
+    <button class="exportbtn" id="expJson">Copy JSON</button>
+    <button class="exportbtn" id="expCsv">Copy CSV</button>
+    <button class="exportbtn" id="dlCsv">Download CSV file</button>
+    <div class="flash" id="eflash"></div>
+    <div id="nudge" style="font-size:13px;color:var(--ink-soft);margin-top:10px;line-height:1.5"></div>
+
+    <h3 style="margin-top:26px">Import</h3>
+    <p style="font-style:italic;color:var(--ink-soft)">Load a JSON file you exported before. A backup is taken first, so this can't lose what you have. <b>Merge</b> keeps both sets (de-duped); <b>Replace</b> swaps everything for the file's contents.</p>
+    <input type="file" id="impFile" accept="application/json,.json" style="display:block;margin:8px 0">
+    <button class="exportbtn" id="impMerge">Import &amp; merge</button>
+    <button class="exportbtn" id="impReplace">Import &amp; replace</button>
+    <div class="flash" id="iflash"></div>
+    <div class="warn" id="storewarn" style="display:none"></div>
+  </section>
+</div>
+
+<script>
+const VB=300, A={x:150,y:24}, B={x:26,y:268}, C={x:274,y:268};
+const DEFAULT={
+  version:1,
+  pA:"A moment from the last few days you keep turning over — whether it left you energised, drained, or uneasy. Tell what happened.",
+  pB:"A moment you'd struggle to explain to someone else — where you're not sure what happened, or why it mattered.",
+  t:["What the situation demanded","What I expected of myself","What I sensed others needed"],
+  ag3:["Constraint","Affordance","Initiative"],
+  wh3:["Self","Others","The work or place itself"],
+  foL:"forced", foR:"effortless",
+  opL:"completely resolved", opR:"completely unresolved",
+  enL:"drained", enR:"replenished",
+  diL:"many fewer", diR:"many more",
+  /* legacy dyad labels — kept so version-stamped older fragments still read correctly */
+  agL:"entirely outside my control", agR:"entirely of my own making",
+  whL:"just me", whR:"for a larger whole"
+};
+let entries=[], place={t1:null,ag:null,wh:null}, prompt=null, storageOK=true, cfg=null, revealed=false, xAxis='forced', salient=false;
+
+const num=(v)=>Number.isFinite(+v)?+v:50;
+
+/* ============================================================
+   STORAGE — local cache (always-on) + Google Drive (offsite truth)
+   Model: every change writes to the local cache instantly, then a
+   debounced push sends the whole dataset to one JSON file in your
+   Drive. The Drive file is the authoritative copy; the cache is the
+   fast layer and the offline buffer. Nothing is ever lost to a frame
+   or a refresh, and a save is safe offsite within a few seconds of
+   signal.
+   ============================================================ */
+const SCHEMA=2;
+const LS_PREFIX='frag_';                 // localStorage namespace
+const DRIVE_FILENAME='fragments.json';   // the file in your Drive
+const DRIVE_CSV_FILENAME='fragments.csv';// human/spreadsheet mirror
+const SCOPE='https://www.googleapis.com/auth/drive.file';
+
+/* ---- local cache (localStorage; falls back to memory) ---- */
+const mem={}; let lsOK=true;
+try{ const k='__t'+Date.now(); localStorage.setItem(k,'1'); localStorage.removeItem(k); }catch{ lsOK=false; }
+const cache={
+  get(k){ try{ return lsOK?localStorage.getItem(LS_PREFIX+k):(mem[k]??null); }catch{ return mem[k]??null; } },
+  set(k,v){ try{ if(lsOK)localStorage.setItem(LS_PREFIX+k,v); else mem[k]=v; }catch{ mem[k]=v; lsOK=false; } },
+  del(k){ try{ if(lsOK)localStorage.removeItem(LS_PREFIX+k); }catch{} delete mem[k]; },
+};
+function cacheLoadEntries(){ try{ return JSON.parse(cache.get('entries')||'[]'); }catch{ return []; } }
+function cacheSaveEntries(){ cache.set('entries',JSON.stringify(entries)); cache.set('backup',JSON.stringify(bundle())); }
+
+function bundle(){ return {tool:'fragments',schemaVersion:SCHEMA,exported:Date.now(),config:cfg,entries:entries}; }
+
+async function load(){
+  // config + entries from local cache first, so the app is instant and works offline
+  try{ const c=cache.get('config'); cfg=c?Object.assign({},DEFAULT,JSON.parse(c)):{...DEFAULT}; }catch{ cfg={...DEFAULT}; }
+  if(!cfg.saved) cache.set('config',JSON.stringify(cfg));
+  entries=cacheLoadEntries().map(migrateEntry).sort((a,b)=>b.t-a.t);
+  storageOK=true;
+  applyLabels(); fillTune(); refreshVerSel();
+  // then, if Drive is configured + signed in, pull and merge the offsite copy
+  drive.initFromSaved();
+  if(drive.isConfigured()) drive.pull().catch(()=>{});
+  renderSync();
+}
+/* persistence: cache instantly, queue a Drive push */
+async function snapshot(){ /* covered by cacheSaveEntries */ }
+async function persistEntry(o){ cacheSaveEntries(); drive.queuePush(); }
+async function persistCfg(){ cache.set('config',JSON.stringify(cfg)); drive.queuePush(); }
+async function remove(t){ entries=entries.filter(e=>e.t!==t); cacheSaveEntries(); drive.queuePush(); if(revealed)renderRevealed(); }
+
+/* ---- Google Drive sync engine ---- */
+const drive=(function(){
+  let clientId=cache.get('gdrive_client_id')||'';
+  let fileId=cache.get('gdrive_file_id')||'';
+  let csvFileId=cache.get('gdrive_csv_id')||'';
+  let token=null, tokenExp=0, tokenClient=null, gisReady=false;
+  let pushTimer=null, status='idle', lastSync=cache.get('gdrive_lastsync')||'';
+
+  function isConfigured(){ return !!clientId; }
+  function setStatus(s){ status=s; renderSync(); }
+  function getStatus(){ return status; }
+  function getLastSync(){ return lastSync; }
+
+  function loadGIS(){
+    return new Promise((res,rej)=>{
+      if(window.google&&google.accounts&&google.accounts.oauth2){gisReady=true;return res();}
+      const s=document.createElement('script');
+      s.src='https://accounts.google.com/gsi/client'; s.async=true; s.defer=true;
+      s.onload=()=>{gisReady=true;res();}; s.onerror=()=>rej(new Error('Could not load Google sign-in'));
+      document.head.appendChild(s);
+    });
+  }
+  function initFromSaved(){ if(clientId) loadGIS().catch(()=>{}); }
+
+  function ensureToken(interactive){
+    return new Promise(async(res,rej)=>{
+      if(token&&Date.now()<tokenExp-60000) return res(token);
+      try{ await loadGIS(); }catch(e){ return rej(e); }
+      if(!clientId) return rej(new Error('No Client ID set'));
+      if(!tokenClient){
+        tokenClient=google.accounts.oauth2.initTokenClient({
+          client_id:clientId, scope:SCOPE,
+          callback:(resp)=>{
+            if(resp&&resp.access_token){ token=resp.access_token; tokenExp=Date.now()+(resp.expires_in||3600)*1000; res(token); }
+            else rej(new Error(resp&&resp.error||'No token'));
+          },
+        });
+      } else { tokenClient.callback=(resp)=>{
+        if(resp&&resp.access_token){ token=resp.access_token; tokenExp=Date.now()+(resp.expires_in||3600)*1000; res(token); }
+        else rej(new Error(resp&&resp.error||'No token')); }; }
+      // interactive on first/explicit sign-in; silent attempt otherwise
+      try{ tokenClient.requestAccessToken({prompt: interactive?'consent':''}); }catch(e){ rej(e); }
+    });
+  }
+
+  async function api(url,opts){
+    const t=await ensureToken(false);
+    opts=opts||{}; opts.headers=Object.assign({},opts.headers,{Authorization:'Bearer '+t});
+    const r=await fetch(url,opts);
+    if(r.status===401){ token=null; const t2=await ensureToken(true); opts.headers.Authorization='Bearer '+t2; return fetch(url,opts); }
+    return r;
+  }
+
+  async function findFile(name){
+    const q=encodeURIComponent(`name='${name}' and trashed=false`);
+    const r=await api(`https://www.googleapis.com/drive/v3/files?q=${q}&spaces=drive&fields=files(id,name,modifiedTime)`);
+    if(!r.ok) throw new Error('Drive search failed ('+r.status+')');
+    const j=await r.json(); return (j.files&&j.files[0])||null;
+  }
+  function multipartBody(metadata,content,contentType,boundary){
+    return `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n`+
+      JSON.stringify(metadata)+`\r\n--${boundary}\r\nContent-Type: ${contentType}\r\n\r\n`+
+      content+`\r\n--${boundary}--`;
+  }
+  async function writeFile(existingId,name,content,contentType){
+    const boundary='frag_'+Math.random().toString(36).slice(2);
+    const meta=existingId?{}:{name};
+    const body=multipartBody(meta,content,contentType,boundary);
+    const url=existingId
+      ? `https://www.googleapis.com/upload/drive/v3/files/${existingId}?uploadType=multipart&fields=id`
+      : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id`;
+    const r=await api(url,{method:existingId?'PATCH':'POST',
+      headers:{'Content-Type':'multipart/related; boundary='+boundary}, body});
+    if(!r.ok) throw new Error('Drive write failed ('+r.status+')');
+    return (await r.json()).id;
+  }
+  async function readFile(id){
+    const r=await api(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`);
+    if(!r.ok) throw new Error('Drive read failed ('+r.status+')');
+    return r.text();
+  }
+
+  // merge by timestamp id: union of entries, newest wins on collision; never deletes silently
+  function mergeEntries(remote){
+    const byT={}; entries.forEach(e=>byT[e.t]=e);
+    (remote||[]).forEach(e=>{ if(!byT[e.t]) byT[e.t]=migrateEntry(e); });
+    entries=Object.values(byT).sort((a,b)=>b.t-a.t);
+  }
+
+  async function pull(){
+    if(!clientId) return;
+    setStatus('syncing');
+    try{
+      if(!fileId){ const f=await findFile(DRIVE_FILENAME); if(f){ fileId=f.id; cache.set('gdrive_file_id',fileId); } }
+      if(fileId){
+        const txt=await readFile(fileId);
+        let data; try{ data=JSON.parse(txt); }catch{ data=null; }
+        if(data&&data.entries){ mergeEntries(data.entries); if(data.config&&data.config.saved&&!cfg.saved){ cfg=Object.assign({},DEFAULT,data.config); cache.set('config',JSON.stringify(cfg)); applyLabels(); fillTune(); } }
+        cacheSaveEntries();
+        if(revealed)renderRevealed(); refreshVerSel();
+      }
+      markSync(); setStatus('synced');
+      // after pulling, push our merged copy back so both sides converge
+      doPush().catch(()=>{});
+    }catch(e){ setStatus(navigator.onLine?'error':'offline'); }
+  }
+
+  function queuePush(){
+    if(!clientId){ setStatus('local'); return; }
+    setStatus('pending');
+    clearTimeout(pushTimer);
+    pushTimer=setTimeout(()=>doPush().catch(()=>{}),1500);
+  }
+  async function doPush(){
+    if(!clientId) return;
+    if(!navigator.onLine){ setStatus('offline'); return; }
+    setStatus('syncing');
+    try{
+      const json=JSON.stringify(bundle(),null,2);
+      fileId=await writeFile(fileId,DRIVE_FILENAME,json,'application/json');
+      cache.set('gdrive_file_id',fileId);
+      if(WRITE_CSV){ const csv=toCSV(); csvFileId=await writeFile(csvFileId,DRIVE_CSV_FILENAME,csv,'text/csv'); cache.set('gdrive_csv_id',csvFileId); }
+      markSync(); setStatus('synced'); markBackup();
+    }catch(e){ setStatus(navigator.onLine?'error':'offline'); }
+  }
+  function markSync(){ lastSync=new Date().toISOString(); cache.set('gdrive_lastsync',lastSync); }
+
+  async function connect(newClientId){
+    clientId=(newClientId||'').trim(); cache.set('gdrive_client_id',clientId);
+    fileId=''; cache.set('gdrive_file_id','');
+    await loadGIS();
+    await ensureToken(true);            // interactive consent
+    await pull();                       // find-or-create + merge
+    await doPush();                     // ensure the file exists with our data
+    return true;
+  }
+  function disconnect(){
+    try{ if(token) google.accounts.oauth2.revoke(token,()=>{}); }catch{}
+    token=null; clientId=''; fileId=''; csvFileId='';
+    ['gdrive_client_id','gdrive_file_id','gdrive_csv_id','gdrive_lastsync'].forEach(k=>cache.del(k));
+    setStatus('local');
+  }
+  return { isConfigured,initFromSaved,connect,disconnect,pull,queuePush,getStatus,getLastSync,
+           _doPush:doPush, get clientId(){return clientId;}, get fileId(){return fileId;} };
+})();
+let WRITE_CSV = (cache.get('gdrive_write_csv')!=='0'); // default on
+
+window.addEventListener('online',()=>{ if(drive.isConfigured()) drive.queuePush(); });
+
+/* ---------- backup nudge ---------- */
+let lastBackup=0;
+async function loadLastBackup(){ try{ lastBackup=+(cache.get('lastBackup')||0); }catch{ lastBackup=0; } renderNudge(); }
+async function markBackup(){ lastBackup=Date.now(); cache.set('lastBackup',String(lastBackup)); renderNudge(); }
+function renderNudge(){ const n=document.getElementById('nudge'); if(!n)return;
+  if(!lastBackup){ n.textContent='Not yet downloaded. The only loss-proof copy is a file in your own drive \u2014 download the JSON when you finish a read.'; return; }
+  const days=Math.floor((Date.now()-lastBackup)/86400000);
+  n.textContent='Last download '+(days===0?'today':days+' day'+(days>1?'s':'')+' ago')+'. The browser copy is convenience; the downloaded file is the real backup.';
+}
+
+/* ---------- sync status UI ---------- */
+function renderSync(){
+  const dot=document.getElementById('syncDot'), label=document.getElementById('syncLabel'),
+        msg=document.getElementById('syncMsg'), when=document.getElementById('syncWhen'),
+        connect=document.getElementById('syncConnect'), manage=document.getElementById('syncManage');
+  if(!dot)return;
+  const configured=drive.isConfigured(), s=drive.getStatus();
+  connect.style.display=configured?'none':'block';
+  manage.style.display=configured?'block':'none';
+  const map={
+    idle:['#3f7d4f','Synced to Drive'], local:['var(--ink-soft)','Local only'],
+    pending:['#c9a227','Saving\u2026'], syncing:['#c9a227','Syncing\u2026'],
+    synced:['#3f7d4f','Synced to Drive'], offline:['#9a4a2a','Offline \u2014 will sync'],
+    error:['#9a4a2a','Sync error \u2014 tap Sync now']
+  };
+  const key=configured?(s==='idle'?'synced':s):'local';
+  const pair=map[key]||map.local;
+  dot.style.background=pair[0]; label.textContent=pair[1];
+  if(configured){
+    msg.textContent='Your fragments live in fragments.json in your Google Drive. This device keeps a fast local copy and syncs changes up automatically.';
+    const ls=drive.getLastSync(); when.textContent=ls?('last sync '+timeAgo(new Date(ls).getTime())):'';
+  } else { when.textContent=''; }
+}
+function timeAgo(t){ const s=Math.floor((Date.now()-t)/1000);
+  if(s<60)return'just now'; const m=Math.floor(s/60); if(m<60)return m+'m ago';
+  const h=Math.floor(m/60); if(h<24)return h+'h ago'; return Math.floor(h/24)+'d ago'; }
+
+/* ---------- import (round-trip) ---------- */
+function validBundle(b){ return b && typeof b==='object' && Array.isArray(b.entries) && b.config && typeof b.config==='object'; }
+function migrateEntry(e){
+  ['forced','open','energy','disp'].forEach(k=>{ if(!(k in e)) e[k]=null; });
+  // new triad fields (A2): absent on legacy fragments — leave null, original meaning preserved by sv stamp
+  if(!('ag' in e)) e.ag=null;
+  if(!('wh' in e)) e.wh=null;
+  if(!('salient' in e)) e.salient=false;   // A3
+  if(!e.sv) e.sv=1; return e; }
+async function importJSON(text,mode){
+  let b; try{ b=JSON.parse(text); }catch{ return {ok:false,msg:'That file isn\u2019t valid JSON.'}; }
+  if(!validBundle(b)) return {ok:false,msg:'That doesn\u2019t look like a Fragments export (no entries/config found).'};
+  const incoming=b.entries.filter(e=>e&&e.t).map(migrateEntry);
+  if(mode==='replace'){
+    entries=incoming.slice();
+    cfg=Object.assign({},DEFAULT,b.config); cache.set('config',JSON.stringify(cfg));
+  }else{
+    const byT={}; entries.forEach(e=>byT[e.t]=e); incoming.forEach(e=>byT[e.t]=e);
+    entries=Object.values(byT).sort((a,b)=>b.t-a.t);
+  }
+  cacheSaveEntries(); drive.queuePush();
+  applyLabels(); fillTune(); refreshVerSel(); if(revealed)renderRevealed();
+  return {ok:true,msg:'Imported '+incoming.length+' fragment'+(incoming.length===1?'':'s')+' ('+mode+'). Current total: '+entries.length+'. '+(drive.isConfigured()?'Syncing to Drive.':'Saved locally.')};
+}
+
+/* ---------- labels ---------- */
+function applyLabels(){
+  document.getElementById('promptA').textContent=cfg.pA;
+  document.getElementById('promptB').textContent=cfg.pB;
+  const set=(id,v)=>document.getElementById(id).textContent=v;
+  set('foL',cfg.foL);set('foR',cfg.foR);
+  set('opL',cfg.opL);set('opR',cfg.opR);set('enL',cfg.enL);set('enR',cfg.enR);
+  set('diL',cfg.diL);set('diR',cfg.diR);
+  drawTriad();
+}
+function fillTune(){
+  const m={c_pA:'pA',c_pB:'pB',c_t0:['t',0],c_t1:['t',1],c_t2:['t',2],
+    c_ag0:['ag3',0],c_ag1:['ag3',1],c_ag2:['ag3',2],c_wh0:['wh3',0],c_wh1:['wh3',1],c_wh2:['wh3',2],
+    c_foL:'foL',c_foR:'foR',c_opL:'opL',c_opR:'opR',c_enL:'enL',c_enR:'enR',c_diL:'diL',c_diR:'diR'};
+  for(const id in m){const k=m[id];document.getElementById(id).value=Array.isArray(k)?cfg[k[0]][k[1]]:cfg[k];}
+}
+
+/* ---------- triad geometry (shared) ---------- */
+function bary(p){
+  const det=(B.y-C.y)*(A.x-C.x)+(C.x-B.x)*(A.y-C.y);
+  let a=((B.y-C.y)*(p.x-C.x)+(C.x-B.x)*(p.y-C.y))/det;
+  let b=((C.y-A.y)*(p.x-C.x)+(A.x-C.x)*(p.y-C.y))/det;
+  let c=1-a-b; a=Math.max(0,a);b=Math.max(0,b);c=Math.max(0,c);
+  const s=a+b+c||1; return [a/s,b/s,c/s];
+}
+const fromBary=w=>({x:A.x*w[0]+B.x*w[1]+C.x*w[2], y:A.y*w[0]+B.y*w[1]+C.y*w[2]});
+
+/* one capture triad: svg id, readout id, label-getter, and where the placement is stored */
+function makeTriad(svgId, rdId, getLabels, getVal, setVal){
+  function draw(){
+    const svg=document.getElementById(svgId), L=getLabels();
+    svg.innerHTML=`
+      <polygon points="${A.x},${A.y} ${B.x},${B.y} ${C.x},${C.y}" fill="rgba(169,96,31,.05)" stroke="var(--line)" stroke-width="1"/>
+      <text class="triad-lbl" x="${A.x}" y="${A.y-7}" text-anchor="middle">${L[0]}</text>
+      <text class="triad-lbl" x="${B.x-2}" y="${B.y+16}" text-anchor="start">${L[1]}</text>
+      <text class="triad-lbl" x="${C.x+2}" y="${C.y+16}" text-anchor="end">${L[2]}</text>
+      <g class="tdot"></g>`;
+    const v=getVal();
+    if(v){const pos=fromBary(v);svg.querySelector('.tdot').innerHTML=`<circle cx="${pos.x}" cy="${pos.y}" r="8" fill="var(--ochre)" stroke="var(--paper)" stroke-width="2"/>`;}
+    svg.onpointerdown=ev=>{
+      ev.preventDefault();
+      const rect=svg.getBoundingClientRect();
+      const p={x:(ev.clientX-rect.left)/rect.width*VB, y:(ev.clientY-rect.top)/rect.height*VB};
+      const w=bary(p), pos=fromBary(w); setVal(w);
+      svg.querySelector('.tdot').innerHTML=`<circle cx="${pos.x}" cy="${pos.y}" r="8" fill="var(--ochre)" stroke="var(--paper)" stroke-width="2" style="animation:drop .3s both"/>`;
+      document.getElementById(rdId).textContent=L.map((n,i)=>n.split(' ')[0].toLowerCase()+' '+Math.round(w[i]*100)+'%').join(' · ');
+    };
+  }
+  return {draw};
+}
+let triRespond, triAg, triWh;
+function initTriads(){
+  triRespond=makeTriad('t1','t1r',()=>cfg.t,()=>place.t1,w=>place.t1=w);
+  triAg=makeTriad('tAg','tAgr',()=>cfg.ag3,()=>place.ag,w=>place.ag=w);
+  triWh=makeTriad('tWh','tWhr',()=>cfg.wh3,()=>place.wh,w=>place.wh=w);
+}
+function drawTriad(){ if(triRespond)triRespond.draw(); if(triAg)triAg.draw(); if(triWh)triWh.draw(); }
+
+/* ---------- filtered view ---------- */
+function shown(){ const sel=document.getElementById('verSel').value; return sel==='all'?entries:entries.filter(e=>(e.sv||1)===cfg.version); }
+function refreshVerSel(){
+  const versions=[...new Set(entries.map(e=>e.sv||1))];
+  const note=document.getElementById('verNote');
+  note.textContent = versions.length>1 ? 'fragments span '+versions.length+' versions' : '';
+}
+
+/* ---------- plots ---------- */
+function plotTriadInto(svgId,field,labels,data,outliers){
+  outliers=outliers||new Set();
+  const svg=document.getElementById(svgId), a={x:150,y:20},b={x:26,y:258},c={x:274,y:258}, L=labels;
+  let dots='';
+  data.forEach(e=>{ const w=e[field]; if(!w)return;
+    const x=a.x*w[0]+b.x*w[1]+c.x*w[2], y=a.y*w[0]+b.y*w[1]+c.y*w[2];
+    const ring=outliers.has(e.t)?`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7.5" fill="none" stroke="var(--slate)" stroke-width="1.3"/>`:'';
+    const sal=e.salient?`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="10" fill="none" stroke="var(--ochre)" stroke-width="1" stroke-dasharray="2 2"/>`:'';
+    if(e.disp==null){dots+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="var(--ink-soft)" fill-opacity="0.22"/>`+ring+sal;return;}
+    const more=e.disp>=50, col=more?'var(--ochre)':'var(--slate)';
+    const op=0.35+Math.abs(e.disp-50)/50*0.5, r=more?4+(e.disp-50)/50*3:3.5;
+    dots+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="${col}" fill-opacity="${op.toFixed(2)}"/>`+ring+sal;
+  });
+  svg.innerHTML=`<polygon points="${a.x},${a.y} ${b.x},${b.y} ${c.x},${c.y}" fill="none" stroke="var(--line)"/>
+    <text class="triad-lbl" x="${a.x}" y="${a.y-6}" text-anchor="middle">${L[0]}</text>
+    <text class="triad-lbl" x="${b.x-2}" y="${b.y+15}" text-anchor="start">${L[1]}</text>
+    <text class="triad-lbl" x="${c.x+2}" y="${c.y+15}" text-anchor="end">${L[2]}</text>
+    ${dots||'<text x="150" y="150" text-anchor="middle" class="triad-lbl">no placements yet</text>'}`;
+}
+function plotXY(data,outliers){
+  outliers=outliers||new Set();
+  const svg=document.getElementById('plotXY'), m=38,W=300,H=300;
+  const AX={forced:[cfg.foL,cfg.foR,'forced'],open:[cfg.opL,cfg.opR,'open']};
+  const [xL,xR,xkey]=AX[xAxis]||AX.forced;
+  let dots='';
+  data.forEach(e=>{
+    const xraw=e[xkey];
+    const px=m+(num(xraw)/100)*(W-2*m), py=(H-m)-(num(e.energy)/100)*(H-2*m);
+    const ring=outliers.has(e.t)?`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="7.5" fill="none" stroke="var(--slate)" stroke-width="1.3"/>`:'';
+    const sal=e.salient?`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="10" fill="none" stroke="var(--ochre)" stroke-width="1" stroke-dasharray="2 2"/>`:'';
+    if(e.disp==null){dots+=`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="3" fill="var(--ink-soft)" fill-opacity="0.22"/>`+ring+sal;return;}
+    const more=e.disp>=50, col=more?'var(--ochre)':'var(--slate)';
+    const op=0.35+Math.abs(e.disp-50)/50*0.5, r=more?4+(e.disp-50)/50*3:3.5;
+    dots+=`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${r.toFixed(1)}" fill="${col}" fill-opacity="${op.toFixed(2)}"/>`+ring+sal;
+  });
+  svg.innerHTML=`<line x1="${m}" y1="${H-m}" x2="${W-m}" y2="${H-m}" stroke="var(--line)"/>
+    <line x1="${m}" y1="${m}" x2="${m}" y2="${H-m}" stroke="var(--line)"/>
+    <text class="triad-lbl" x="${m}" y="${H-m+16}" text-anchor="start">${xL}</text>
+    <text class="triad-lbl" x="${W-m}" y="${H-m+16}" text-anchor="end">${xR}</text>
+    <text class="triad-lbl" x="${m-4}" y="${H-m}" text-anchor="end" transform="rotate(-90 ${m-4} ${H-m})">${cfg.enL}</text>
+    <text class="triad-lbl" x="${m-4}" y="${m+4}" text-anchor="start" transform="rotate(-90 ${m-4} ${m+4})">${cfg.enR}</text>
+    ${dots||'<text x="150" y="150" text-anchor="middle" class="triad-lbl">no fragments yet</text>'}`;
+}
+
+/* ---------- vector: direction of travel (A1) ---------- */
+function centroidXY(set){
+  // x = grain (forced), y = energy; over the "more like this" fragments with both values
+  const pts=set.filter(e=>e.disp!=null&&e.disp>=50&&e.forced!=null&&e.energy!=null);
+  if(pts.length<2) return null;
+  const mx=pts.reduce((s,e)=>s+e.forced,0)/pts.length, my=pts.reduce((s,e)=>s+e.energy,0)/pts.length;
+  return {x:mx,y:my,n:pts.length};
+}
+function plotVector(data){
+  const svg=document.getElementById('plotVec'), m=38,W=300,H=300;
+  const card=document.getElementById('vectorCard'), read=document.getElementById('vecRead');
+  const ordered=[...data].sort((a,b)=>a.t-b.t);
+  const half=Math.floor(ordered.length/2);
+  const early=centroidXY(ordered.slice(0,half)), recent=centroidXY(ordered.slice(half));
+  const toPx=p=>({x:m+(p.x/100)*(W-2*m), y:(H-m)-(p.y/100)*(H-2*m)});
+  const frame=`<line x1="${m}" y1="${H-m}" x2="${W-m}" y2="${H-m}" stroke="var(--line)"/>
+    <line x1="${m}" y1="${m}" x2="${m}" y2="${H-m}" stroke="var(--line)"/>
+    <text class="triad-lbl" x="${m}" y="${H-m+16}" text-anchor="start">${cfg.foL}</text>
+    <text class="triad-lbl" x="${W-m}" y="${H-m+16}" text-anchor="end">${cfg.foR}</text>
+    <text class="triad-lbl" x="${m-4}" y="${H-m}" text-anchor="end" transform="rotate(-90 ${m-4} ${H-m})">${cfg.enL}</text>
+    <text class="triad-lbl" x="${m-4}" y="${m+4}" text-anchor="start" transform="rotate(-90 ${m-4} ${m+4})">${cfg.enR}</text>`;
+  if(!early||!recent){
+    svg.innerHTML=frame+`<text x="150" y="150" text-anchor="middle" class="triad-lbl">need more “more like this” moments</text>`;
+    read.textContent='A direction appears once both halves have a couple of “more like this” fragments with grain and energy marked.';
+    return;
+  }
+  const p0=toPx(early), p1=toPx(recent);
+  svg.innerHTML=frame+`
+    <circle cx="${p0.x.toFixed(1)}" cy="${p0.y.toFixed(1)}" r="5" fill="none" stroke="var(--slate)" stroke-width="1.5"/>
+    <text class="triad-lbl" x="${p0.x.toFixed(1)}" y="${(p0.y-9).toFixed(1)}" text-anchor="middle">earlier</text>
+    <line x1="${p0.x.toFixed(1)}" y1="${p0.y.toFixed(1)}" x2="${p1.x.toFixed(1)}" y2="${p1.y.toFixed(1)}" stroke="var(--ochre)" stroke-width="2"/>
+    <circle cx="${p1.x.toFixed(1)}" cy="${p1.y.toFixed(1)}" r="6" fill="var(--ochre)"/>
+    <text class="triad-lbl" x="${p1.x.toFixed(1)}" y="${(p1.y-10).toFixed(1)}" text-anchor="middle">recent</text>`;
+  const dx=recent.x-early.x, dy=recent.y-early.y;
+  const gph=Math.abs(dx)<4?'holding':(dx>0?'toward effortless':'toward forced');
+  const enph=Math.abs(dy)<4?'holding':(dy>0?'more replenishing':'more draining');
+  read.textContent='Grain '+gph+'; energy '+enph+'. Direction, not a target — read it, don\u2019t chase it.';
+}
+
+/* ---------- outliers (the tail) ---------- */
+function outlierKeys(data){
+  const dims=['forced','open','energy','disp'];
+  const vals={}; dims.forEach(d=>vals[d]=data.map(e=>e[d]).filter(v=>v!=null));
+  const med={}; dims.forEach(d=>{const a=[...vals[d]].sort((x,y)=>x-y); med[d]=a.length?a[Math.floor(a.length/2)]:50;});
+  // triad centroids, for distance on the two triads
+  const tc=field=>{const ps=data.map(e=>e[field]).filter(Boolean);
+    if(!ps.length)return null; return [0,1,2].map(i=>ps.reduce((s,w)=>s+w[i],0)/ps.length);};
+  const agc=tc('ag'), whc=tc('wh');
+  const tdist=(w,ctr)=>w&&ctr?Math.abs(w[0]-ctr[0])+Math.abs(w[1]-ctr[1])+Math.abs(w[2]-ctr[2]):0;
+  const scored=data.map(e=>{
+    let s=0,n=0; dims.forEach(d=>{ if(e[d]!=null){ s+=Math.abs(e[d]-med[d]); n++; } });
+    let base=n?s/Math.max(n,1):0;
+    base+=tdist(e.ag,agc)*40+tdist(e.wh,whc)*40; // triad divergence, scaled to the 0–100 dyad range
+    if(e.prompt==='b') base+=18; // weak-signal captures count toward the tail
+    return {t:e.t, score:base};
+  });
+  return new Set(scored.sort((a,b)=>b.score-a.score).slice(0,Math.min(3,Math.max(1,Math.floor(data.length/8)))).map(o=>o.t));
+}
+
+/* ---------- revealed render ---------- */
+function renderRevealed(){
+  const data=shown();
+  const outliers=data.length>=8?outlierKeys(data):new Set();
+  document.getElementById('fcount').textContent=data.length+' fragment'+(data.length===1?'':'s');
+  document.getElementById('readbox').innerHTML = data.length>=8
+    ? `<div class="read">Compare your prediction with where the <b>ochre</b> (“more like this”) clusters — but don't stop at the centre. The few moments that <b>don't fit the cluster</b> (ringed) and the hard-to-explain captures are the weak signals, and the weak signals usually carry the most. Read the edges as hard as the middle. If the cluster matches your guess exactly, distrust it.</div>`
+    : `<div class="read">Only ${data.length} fragments in this view. The pattern needs a few dozen before clusters mean anything — keep capturing, don't read yet.</div>`;
+  plotTriadInto('plotTri','t1',cfg.t,data,outliers);
+  plotTriadInto('plotAg','ag',cfg.ag3,data,outliers);
+  plotTriadInto('plotWh','wh',cfg.wh3,data,outliers);
+  plotXY(data,outliers);
+  plotVector(data);
+  const readbox=document.getElementById('readbox');
+  // salient surfacing (A3) — separate from the statistical tail
+  const sal=data.filter(e=>e.salient);
+  if(sal.length){
+    readbox.innerHTML += `<div class="read" style="background:var(--ochre-soft);border-left-color:var(--ochre)"><b>Moments you marked “this matters” (${sal.length}):</b><br>${sal.slice(0,8).map(e=>'★ '+esc(e.frag.slice(0,90))+(e.frag.length>90?'…':'')).join('<br>')}${sal.length>8?'<br>…':''}</div>`;
+  }
+  const list=document.getElementById('list');
+  if(!data.length){list.innerHTML='<div class="empty">No fragments in this view.</div>';return;}
+  if(outliers.size){
+    const ot=data.filter(e=>outliers.has(e.t));
+    readbox.innerHTML += `<div class="read" style="background:var(--slate-soft);border-left-color:var(--slate)"><b>Look here first — moments at the edge:</b><br>${ot.map(e=>'· '+esc(e.frag.slice(0,90))+(e.frag.length>90?'…':'')).join('<br>')}</div>`;
+  }
+  const tri=(w,L)=>w?L.map((n,i)=>n.split(' ')[0].toLowerCase()+' '+Math.round(w[i]*100)+'%').join(' · '):'—';
+  list.innerHTML=data.map(e=>{
+    const d=new Date(e.t);
+    return `<div class="entry"${outliers.has(e.t)?' style="border-left:2px solid var(--slate);padding-left:9px"':''}>
+      <div class="meta"><span>${d.toLocaleDateString(undefined,{month:'short',day:'numeric'})} · ${d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})} · v${e.sv||1} · prompt ${e.prompt||'?'}${e.salient?' · ★':''}${outliers.has(e.t)?' · edge':''}</span>
+      <button class="del" data-t="${e.t}">delete</button></div>
+      <div class="txt">${esc(e.frag)}</div>
+      <div class="tags"><b>responding:</b> ${tri(e.t1,cfg.t)}<br>
+      <b>agency:</b> ${e.ag?tri(e.ag,cfg.ag3):(e.agency==null?'—':'(v'+(e.sv||1)+' dyad '+e.agency+')')}<br>
+      <b>service:</b> ${e.wh?tri(e.wh,cfg.wh3):(e.whole==null?'—':'(v'+(e.sv||1)+' dyad '+e.whole+')')}<br>
+      <b>grain</b> ${e.forced==null?'—':e.forced} · <b>open</b> ${e.open==null?'—':e.open} · <b>energy</b> ${e.energy==null?'—':e.energy} · <b>want</b> ${e.disp==null?'—':(e.disp>=50?'more +'+(e.disp-50):'fewer −'+(50-e.disp))}</div>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.del').forEach(b=>b.onclick=()=>{if(confirm('Delete this fragment?'))remove(+b.dataset.t);});
+}
+const esc=s=>(s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+/* ---------- capture ---------- */
+document.getElementById('salient').onclick=()=>{
+  salient=!salient;
+  const b=document.getElementById('salient');
+  b.classList.toggle('on',salient); b.setAttribute('aria-pressed',salient?'true':'false');
+};
+document.querySelectorAll('#prompts button').forEach(btn=>btn.onclick=()=>{
+  document.querySelectorAll('#prompts button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on'); prompt=btn.dataset.p;
+});
+const dv=id=>document.getElementById(id).value;
+const SLIDERS=['d_forced','d_open','d_energy','d_disp'];
+function initSliders(){
+  SLIDERS.forEach(id=>{
+    const el=document.getElementById(id);
+    el.classList.add('untouched');
+    const rd=document.createElement('div'); rd.className='rdo'; rd.id=id+'_rd'; rd.textContent='— can\u2019t tell / skip';
+    el.parentNode.appendChild(rd);
+    el.addEventListener('input',()=>{el.classList.remove('untouched'); rd.textContent=el.value;});
+  });
+}
+const sval=id=>{const el=document.getElementById(id);return el.classList.contains('untouched')?null:+el.value;};
+function resetSliders(){SLIDERS.forEach(id=>{const el=document.getElementById(id);el.value=50;el.classList.add('untouched');const rd=document.getElementById(id+'_rd');if(rd)rd.textContent='— can\u2019t tell / skip';});}
+document.getElementById('save').onclick=async()=>{
+  const frag=document.getElementById('frag').value.trim(), flash=document.getElementById('flash');
+  if(!frag){flash.textContent='Write or say the moment first — that part\u2019s the data.';return;}
+  const o={t:Date.now(),sv:cfg.version,prompt,frag,t1:place.t1,ag:place.ag,wh:place.wh,salient,
+    forced:sval('d_forced'),open:sval('d_open'),energy:sval('d_energy'),disp:sval('d_disp')};
+  entries.unshift(o); await persistEntry(o); refreshVerSel();
+  document.getElementById('frag').value=''; prompt=null;
+  document.querySelectorAll('#prompts button').forEach(b=>b.classList.remove('on'));
+  place.t1=null; place.ag=null; place.wh=null; drawTriad();
+  document.getElementById('t1r').textContent=''; document.getElementById('tAgr').textContent=''; document.getElementById('tWhr').textContent='';
+  salient=false; const sb=document.getElementById('salient'); sb.classList.remove('on'); sb.setAttribute('aria-pressed','false');
+  resetSliders();
+  const btn=document.getElementById('save'); btn.classList.add('done'); btn.textContent='Kept';
+  flash.innerHTML='Kept. No need to make sense of it yet. <span class="undo">undo</span>';
+  flash.querySelector('.undo').onclick=()=>{remove(o.t);flash.textContent='Removed.';setTimeout(()=>flash.textContent='',1200);};
+  setTimeout(()=>{btn.classList.remove('done');btn.textContent='Keep this';},1600);
+};
+
+/* ---------- read gate ---------- */
+function enterRead(){
+  revealed=false;
+  document.getElementById('revealed').style.display='none';
+  document.getElementById('gate').style.display='block';
+  document.getElementById('predText').value='';
+}
+document.getElementById('revealBtn').onclick=()=>{
+  const p=document.getElementById('predText').value.trim();
+  if(!p){const f=document.getElementById('predText');f.focus();f.placeholder='Write your guess first — that\'s the whole point.';return;}
+  try{ const preds=JSON.parse(cache.get('preds')||'[]'); preds.push({t:Date.now(),text:p}); cache.set('preds',JSON.stringify(preds)); }catch{}
+  revealed=true;
+  document.getElementById('gate').style.display='none';
+  document.getElementById('predEcho').textContent='You predicted: '+p;
+  document.getElementById('revealed').style.display='block';
+  renderRevealed();
+};
+document.getElementById('verSel').onchange=()=>{ if(revealed)renderRevealed(); };
+document.querySelectorAll('.axtog button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.axtog button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); xAxis=b.dataset.ax; if(revealed)plotXY(shown());
+});
+
+/* ---------- tune ---------- */
+document.getElementById('tuneSave').onclick=async()=>{
+  const g=id=>document.getElementById(id).value.trim();
+  const next={version:cfg.version,saved:true,
+    pA:g('c_pA'),pB:g('c_pB'),t:[g('c_t0'),g('c_t1'),g('c_t2')],
+    ag3:[g('c_ag0'),g('c_ag1'),g('c_ag2')],wh3:[g('c_wh0'),g('c_wh1'),g('c_wh2')],
+    foL:g('c_foL'),foR:g('c_foR'),opL:g('c_opL'),opR:g('c_opR'),
+    enL:g('c_enL'),enR:g('c_enR'),diL:g('c_diL'),diR:g('c_diR'),
+    agL:cfg.agL,agR:cfg.agR,whL:cfg.whL,whR:cfg.whR};
+  const cmp=o=>JSON.stringify({...o,version:0,saved:0});
+  const changed=cmp(next)!==cmp(cfg);
+  const tflash=document.getElementById('tflash');
+  if(!changed){tflash.textContent='No changes.';setTimeout(()=>tflash.textContent='',1400);return;}
+  next.version=cfg.version+1; cfg=next; await persistCfg();
+  applyLabels(); refreshVerSel();
+  tflash.textContent='Signifiers updated to v'+cfg.version+'. New fragments carry the new meaning.';
+  setTimeout(()=>tflash.textContent='',2600);
+};
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); document.getElementById(b.dataset.tab).classList.add('on');
+  if(b.dataset.tab==='read') enterRead();
+});
+
+/* ---------- export ---------- */
+function toCSV(){
+  const head=['timestamp','sv','prompt','salient','fragment',
+    'respond_demanded','respond_expected','respond_others',
+    'agency_constraint','agency_affordance','agency_initiative',
+    'service_self','service_others','service_work_place',
+    'grain','still_live','energy','disposition',
+    'legacy_agency_dyad','legacy_service_dyad'];
+  const f=(w,i)=>w?w[i].toFixed(3):'';
+  const b=v=>v==null?'':v;
+  const rows=entries.map(e=>[new Date(e.t).toISOString(),e.sv||1,e.prompt||'',e.salient?'1':'',`"${(e.frag||'').replace(/"/g,'""')}"`,
+    f(e.t1,0),f(e.t1,1),f(e.t1,2),
+    f(e.ag,0),f(e.ag,1),f(e.ag,2),
+    f(e.wh,0),f(e.wh,1),f(e.wh,2),
+    b(e.forced),b(e.open),b(e.energy),b(e.disp),
+    b(e.agency),b(e.whole)].join(','));
+  return [head.join(','),...rows].join('\n');
+}
+const copy=(txt,el)=>navigator.clipboard.writeText(txt).then(()=>{el.textContent='Copied.';setTimeout(()=>el.textContent='',1600);},()=>{el.textContent='Copy failed — select manually.';});
+function dl(name,text,type){
+  try{
+    const blob=new Blob([text],{type});
+    const u=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=u; a.download=name; a.rel='noopener'; a.style.display='none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(u);},4000);
+    return true;
+  }catch(e){ return dlFallback(name,text,type); }
+}
+/* If the page is inside a sandboxed frame, a.click() downloads are blocked.
+   Open the data in a new tab/window so it can be saved manually; if that's blocked
+   too, surface the text in a copyable panel so nothing is ever silently lost. */
+function dlFallback(name,text,type){
+  try{
+    const blob=new Blob([text],{type});
+    const u=URL.createObjectURL(blob);
+    const w=window.open(u,'_blank');
+    if(w){ setTimeout(()=>URL.revokeObjectURL(u),10000); return true; }
+  }catch(e){}
+  showTextPanel(name,text);
+  return false;
+}
+function showTextPanel(name,text){
+  let p=document.getElementById('dlPanel');
+  if(!p){
+    p=document.createElement('div'); p.id='dlPanel';
+    p.style.cssText='position:fixed;inset:0;background:rgba(20,18,14,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:18px';
+    p.innerHTML='<div style="background:var(--paper);max-width:640px;width:100%;max-height:82vh;display:flex;flex-direction:column;border-radius:6px;box-shadow:0 10px 40px rgba(0,0,0,.3);overflow:hidden">'
+      +'<div style="padding:14px 16px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:12px;letter-spacing:.04em">Download was blocked by the frame. Copy this and save it as <b id="dlName"></b><button id="dlClose" style="float:right;border:0;background:none;font-size:18px;cursor:pointer;color:var(--ink-soft)">×</button></div>'
+      +'<textarea id="dlText" readonly style="flex:1;min-height:300px;margin:0;border:0;padding:14px 16px;font-family:var(--mono);font-size:11px;line-height:1.5;resize:none;background:var(--paper);color:var(--ink)"></textarea>'
+      +'<div style="padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px"><button id="dlCopy" style="font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;background:var(--ink);color:var(--paper);border:0;border-radius:3px;padding:11px 16px;cursor:pointer">Copy all</button><span id="dlCopied" style="font-family:var(--mono);font-size:11px;color:var(--ochre);align-self:center"></span></div>'
+      +'</div>';
+    document.body.appendChild(p);
+    p.querySelector('#dlClose').onclick=()=>p.remove();
+    p.onclick=ev=>{if(ev.target===p)p.remove();};
+    p.querySelector('#dlCopy').onclick=async()=>{
+      const ta=p.querySelector('#dlText'); ta.select();
+      let ok=false; try{await navigator.clipboard.writeText(ta.value);ok=true;}catch(e){try{ok=document.execCommand('copy');}catch(_){}}
+      p.querySelector('#dlCopied').textContent=ok?'copied — now paste into a file':'select all and copy manually';
+    };
+  }
+  p.querySelector('#dlName').textContent=name;
+  p.querySelector('#dlText').value=text;
+  p.style.display='flex';
+}
+document.getElementById('expJson').onclick=()=>copy(JSON.stringify(bundle(),null,2),document.getElementById('eflash'));
+document.getElementById('dlJson').onclick=()=>{const d=new Date().toISOString().slice(0,10);const ok=dl('fragments-'+d+'.json',JSON.stringify(bundle(),null,2),'application/json');markBackup();const f=document.getElementById('eflash');f.textContent=ok?'Downloaded.':'Frame blocked the download — copy the panel and save it.';setTimeout(()=>f.textContent='',2600);};
+document.getElementById('expCsv').onclick=()=>copy(toCSV(),document.getElementById('eflash'));
+document.getElementById('dlCsv').onclick=()=>{const ok=dl('fragments.csv',toCSV(),'text/csv');markBackup();const f=document.getElementById('eflash');f.textContent=ok?'Downloaded.':'Frame blocked the download — copy the panel and save it.';setTimeout(()=>f.textContent='',2600);};
+
+function readFile(){return new Promise((res,rej)=>{const f=document.getElementById('impFile').files[0];if(!f){rej('Choose a file first.');return;}const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej('Could not read that file.');r.readAsText(f);});}
+async function doImport(mode){const fl=document.getElementById('iflash');try{const text=await readFile();if(mode==='replace'&&!confirm('Replace everything with the file\u2019s contents? Your current data is backed up first, but this swaps the live set.'))return;const r=await importJSON(text,mode);fl.textContent=r.msg;}catch(e){fl.textContent=typeof e==='string'?e:'Import failed.';}}
+document.getElementById('impMerge').onclick=()=>doImport('merge');
+document.getElementById('impReplace').onclick=()=>doImport('replace');
+
+/* ---- Drive sync controls ---- */
+(function(){
+  const cidInput=document.getElementById('gClientId');
+  const saved=cache.get('gdrive_client_id'); if(saved) cidInput.value=saved;
+  document.getElementById('gCsv').checked=WRITE_CSV;
+  document.getElementById('gCsv').onchange=(e)=>{ WRITE_CSV=e.target.checked; cache.set('gdrive_write_csv',WRITE_CSV?'1':'0'); };
+  document.getElementById('gConnect').onclick=async()=>{
+    const id=cidInput.value.trim(); const msg=document.getElementById('syncMsg');
+    if(!id){ msg.textContent='Paste your Google OAuth Client ID first.'; return; }
+    msg.textContent='Opening Google sign-in…';
+    try{ await drive.connect(id); renderSync(); }
+    catch(e){ msg.textContent='Could not connect: '+(e.message||e)+'. Check the Client ID and that this web address is listed as an authorised origin.'; }
+  };
+  document.getElementById('gSyncNow').onclick=async()=>{ await drive.pull(); };
+  document.getElementById('gDisconnect').onclick=()=>{ if(confirm('Disconnect Drive? Your data stays on this device and in the Drive file; this just stops syncing here.')){ drive.disconnect(); renderSync(); } };
+})();
+
+initSliders();
+initTriads();
+load();
+loadLastBackup();
+renderSync();
+
+/* ---- offline: register a tiny inline service worker so the installed app
+   opens with no signal. Single-file: the worker is built from a blob.
+   (No-op when opened as a local file:// — only active over http/https.) ---- */
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  const swCode=`
+    const C='frag-v1';
+    self.addEventListener('install',e=>{self.skipWaiting();});
+    self.addEventListener('activate',e=>{e.waitUntil(self.clients.claim());});
+    self.addEventListener('fetch',e=>{
+      const u=new URL(e.request.url);
+      // only cache same-origin GETs (the app shell). Never touch Google APIs.
+      if(e.request.method!=='GET'||u.origin!==location.origin){return;}
+      e.respondWith(
+        caches.open(C).then(c=>c.match(e.request).then(hit=>{
+          const net=fetch(e.request).then(r=>{c.put(e.request,r.clone());return r;}).catch(()=>hit);
+          return hit||net;
+        }))
+      );
+    });`;
+  try{
+    const blob=new Blob([swCode],{type:'text/javascript'});
+    navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+  }catch(e){}
+}
+</script>
