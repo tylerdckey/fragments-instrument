@@ -315,6 +315,7 @@
         <p style="font-size:11px;color:var(--ink-soft);margin:8px 0 0">One-time setup. You'll need a free Google OAuth Client ID — the tool's help notes, or whoever set this up for you, has the steps.</p>
       </div>
       <div id="syncManage" style="display:none">
+        <button class="exportbtn" id="gReconnect" style="margin:0 6px 0 0;display:none">Reconnect</button>
         <button class="exportbtn" id="gSyncNow" style="margin:0 6px 0 0">Sync now</button>
         <button class="exportbtn" id="gDisconnect" style="margin:0;background:var(--paper);color:var(--cf-soft,#9a4a2a);border:1px solid var(--line)">Disconnect</button>
       </div>
@@ -394,9 +395,9 @@ async function load(){
   entries=cacheLoadEntries().map(migrateEntry).sort((a,b)=>b.t-a.t);
   storageOK=true;
   applyLabels(); fillTune(); refreshVerSel();
-  // then, if Drive is configured + signed in, pull and merge the offsite copy
+  // then, if Drive is configured, prepare GIS but DO NOT sync on open —
+  // syncing (and any sign-in) only happens after you save, or when you tap reconnect.
   drive.initFromSaved();
-  if(drive.isConfigured()) drive.pull().catch(()=>{});
   renderSync();
 }
 /* persistence: cache instantly, queue a Drive push */
@@ -429,32 +430,44 @@ const drive=(function(){
   }
   function initFromSaved(){ if(clientId) loadGIS().catch(()=>{}); }
 
-  function ensureToken(interactive){
-    return new Promise(async(res,rej)=>{
+  // mode: 'silent' = try to get a token WITHOUT ever opening a window (resolves null if it can't),
+  //       'interactive' = allowed to open the Google window (only from a user tap)
+  function getToken(mode){
+    return new Promise(async(res)=>{
       if(token&&Date.now()<tokenExp-60000) return res(token);
-      try{ await loadGIS(); }catch(e){ return rej(e); }
-      if(!clientId) return rej(new Error('No Client ID set'));
+      try{ await loadGIS(); }catch(e){ return res(null); }
+      if(!clientId) return res(null);
+      let settled=false;
+      const finish=v=>{ if(!settled){ settled=true; res(v); } };
       if(!tokenClient){
         tokenClient=google.accounts.oauth2.initTokenClient({
-          client_id:clientId, scope:SCOPE,
-          callback:(resp)=>{
-            if(resp&&resp.access_token){ token=resp.access_token; tokenExp=Date.now()+(resp.expires_in||3600)*1000; res(token); }
-            else rej(new Error(resp&&resp.error||'No token'));
-          },
+          client_id:clientId, scope:SCOPE, callback:()=>{},
+          error_callback:()=>{ finish(null); }   // popup closed/blocked → resolve null, never throw
         });
-      } else { tokenClient.callback=(resp)=>{
-        if(resp&&resp.access_token){ token=resp.access_token; tokenExp=Date.now()+(resp.expires_in||3600)*1000; res(token); }
-        else rej(new Error(resp&&resp.error||'No token')); }; }
-      // interactive on first/explicit sign-in; silent attempt otherwise
-      try{ tokenClient.requestAccessToken({prompt: interactive?'consent':''}); }catch(e){ rej(e); }
+      }
+      tokenClient.callback=(resp)=>{
+        if(resp&&resp.access_token){ token=resp.access_token; tokenExp=Date.now()+(resp.expires_in||3600)*1000; finish(token); }
+        else finish(null);
+      };
+      try{
+        if(mode==='interactive'){ tokenClient.requestAccessToken({prompt:'consent'}); }
+        else {
+          // silent: ask for a token with no prompt. If Google would need to show UI, it won't here;
+          // the error_callback fires and we resolve null without a window.
+          tokenClient.requestAccessToken({prompt:'none'});
+        }
+      }catch(e){ finish(null); }
     });
   }
 
+  // API call that NEVER auto-opens a window. If no silent token is available, it fails softly
+  // and the caller marks status 'reauth' so the user can reconnect on their own terms.
   async function api(url,opts){
-    const t=await ensureToken(false);
+    const t=await getToken('silent');
+    if(!t){ const e=new Error('reauth'); e.reauth=true; throw e; }
     opts=opts||{}; opts.headers=Object.assign({},opts.headers,{Authorization:'Bearer '+t});
     const r=await fetch(url,opts);
-    if(r.status===401){ token=null; const t2=await ensureToken(true); opts.headers.Authorization='Bearer '+t2; return fetch(url,opts); }
+    if(r.status===401){ token=null; const e=new Error('reauth'); e.reauth=true; throw e; }
     return r;
   }
 
@@ -494,6 +507,11 @@ const drive=(function(){
     entries=Object.values(byT).sort((a,b)=>b.t-a.t);
   }
 
+  function handleErr(e){
+    if(e&&e.reauth){ setStatus('reauth'); }       // needs a tap to reconnect — never auto-popup
+    else setStatus(navigator.onLine?'error':'offline');
+  }
+
   async function pull(){
     if(!clientId) return;
     setStatus('syncing');
@@ -507,9 +525,8 @@ const drive=(function(){
         if(revealed)renderRevealed(); refreshVerSel();
       }
       markSync(); setStatus('synced');
-      // after pulling, push our merged copy back so both sides converge
       doPush().catch(()=>{});
-    }catch(e){ setStatus(navigator.onLine?'error':'offline'); }
+    }catch(e){ handleErr(e); }
   }
 
   function queuePush(){
@@ -528,18 +545,28 @@ const drive=(function(){
       cache.set('gdrive_file_id',fileId);
       if(WRITE_CSV){ const csv=toCSV(); csvFileId=await writeFile(csvFileId,DRIVE_CSV_FILENAME,csv,'text/csv'); cache.set('gdrive_csv_id',csvFileId); }
       markSync(); setStatus('synced'); markBackup();
-    }catch(e){ setStatus(navigator.onLine?'error':'offline'); }
+    }catch(e){ handleErr(e); }
   }
   function markSync(){ lastSync=new Date().toISOString(); cache.set('gdrive_lastsync',lastSync); }
+
+  // explicit user action: allowed to open the Google window
+  async function reconnect(){
+    setStatus('syncing');
+    const t=await getToken('interactive');
+    if(!t){ setStatus('reauth'); return false; }
+    await pull();
+    return true;
+  }
 
   async function connect(newClientId){
     clientId=(newClientId||'').trim(); cache.set('gdrive_client_id',clientId);
     fileId=''; cache.set('gdrive_file_id','');
-    tokenClient=null; token=null; tokenExp=0;   // rebuild the GIS client against the new ID (fixes stale-retry)
+    tokenClient=null; token=null; tokenExp=0;
     await loadGIS();
-    await ensureToken(true);            // interactive consent
-    await pull();                       // find-or-create + merge
-    await doPush();                     // ensure the file exists with our data
+    const t=await getToken('interactive');   // explicit consent
+    if(!t) throw new Error('Sign-in was cancelled or blocked.');
+    await pull();
+    await doPush();
     return true;
   }
   function disconnect(){
@@ -548,7 +575,7 @@ const drive=(function(){
     ['gdrive_client_id','gdrive_file_id','gdrive_csv_id','gdrive_lastsync'].forEach(k=>cache.del(k));
     setStatus('local');
   }
-  return { isConfigured,initFromSaved,connect,disconnect,pull,queuePush,getStatus,getLastSync,
+  return { isConfigured,initFromSaved,connect,reconnect,disconnect,pull,queuePush,getStatus,getLastSync,
            _doPush:doPush, get clientId(){return clientId;}, get fileId(){return fileId;} };
 })();
 let WRITE_CSV = (cache.get('gdrive_write_csv')!=='0'); // default on
@@ -577,14 +604,20 @@ function renderSync(){
   const map={
     idle:['#3f7d4f','Synced to Drive'], local:['var(--ink-soft)','Local only'],
     pending:['#c9a227','Saving\u2026'], syncing:['#c9a227','Syncing\u2026'],
-    synced:['#3f7d4f','Synced to Drive'], offline:['#9a4a2a','Offline \u2014 will sync'],
-    error:['#9a4a2a','Sync error \u2014 tap Sync now']
+    synced:['#3f7d4f','Synced to Drive'], offline:['#9a4a2a','Offline \u2014 will sync when online'],
+    error:['#9a4a2a','Sync error \u2014 tap Sync now'],
+    reauth:['#9a4a2a','Saved here \u2014 tap Reconnect to back up']
   };
   const key=configured?(s==='idle'?'synced':s):'local';
   const pair=map[key]||map.local;
   dot.style.background=pair[0]; label.textContent=pair[1];
+  // show a Reconnect button when the Drive session has lapsed
+  const rc=document.getElementById('gReconnect');
+  if(rc) rc.style.display=(configured&&key==='reauth')?'inline-block':'none';
   if(configured){
-    msg.textContent='Your fragments live in fragments.json in your Google Drive. This device keeps a fast local copy and syncs changes up automatically.';
+    msg.textContent=(key==='reauth')
+      ? 'Your fragments are safe on this device. Your Google session has expired \u2014 tap Reconnect to push them to Drive. Nothing is lost in the meantime.'
+      : 'Your fragments live in fragments.json in your Google Drive. This device keeps a fast local copy and syncs up after you save.';
     const ls=drive.getLastSync(); when.textContent=ls?('last sync '+timeAgo(new Date(ls).getTime())):'';
   } else { when.textContent=''; }
 }
@@ -951,6 +984,17 @@ document.getElementById('save').onclick=async()=>{
   flash.innerHTML='Kept. No need to make sense of it yet. <span class="undo">undo</span>';
   flash.querySelector('.undo').onclick=()=>{remove(o.t);flash.textContent='Removed.';setTimeout(()=>flash.textContent='',1200);};
   setTimeout(()=>{btn.classList.remove('done');btn.textContent='Keep this';},1600);
+  // surface the Drive sync result once the debounced push has had a moment to run
+  if(drive.isConfigured()){
+    setTimeout(()=>{
+      const s=drive.getStatus();
+      if(s==='synced'){ flash.innerHTML='Kept and synced to Drive.'; }
+      else if(s==='reauth'){ flash.innerHTML='Kept here, but your Drive session lapsed — open Export and tap <b>Reconnect</b> to back it up.'; }
+      else if(s==='offline'){ flash.innerHTML='Kept here. Offline — it\u2019ll sync to Drive when you\u2019re back online.'; }
+      else if(s==='error'){ flash.innerHTML='Kept here, but the Drive sync hit an error — try <b>Sync now</b> in Export.'; }
+      setTimeout(()=>{ if(flash.textContent.startsWith('Kept'))flash.textContent=''; },4000);
+    },2200);
+  } else { setTimeout(()=>{ if(flash.textContent.startsWith('Kept'))flash.textContent=''; },2000); }
 };
 
 /* ---------- read gate ---------- */
@@ -1094,7 +1138,8 @@ document.getElementById('impReplace').onclick=()=>doImport('replace');
     try{ await drive.connect(id); renderSync(); }
     catch(e){ msg.textContent='Could not connect: '+(e.message||e)+'. Check the Client ID and that this web address is listed as an authorised origin.'; }
   };
-  document.getElementById('gSyncNow').onclick=async()=>{ await drive.pull(); };
+  document.getElementById('gSyncNow').onclick=async()=>{ const ok=await drive.reconnect(); if(!ok) renderSync(); };
+  document.getElementById('gReconnect').onclick=async()=>{ await drive.reconnect(); renderSync(); };
   document.getElementById('gDisconnect').onclick=()=>{ if(confirm('Disconnect Drive? Your data stays on this device and in the Drive file; this just stops syncing here.')){ drive.disconnect(); renderSync(); } };
 })();
 
