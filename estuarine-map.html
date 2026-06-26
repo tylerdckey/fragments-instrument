@@ -1,0 +1,676 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f3ede1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Estuarine Map">
+<title>Estuarine Map — the standing terrain</title>
+<link rel="manifest" href='data:application/manifest+json,{"name":"Estuarine Map","short_name":"Estuary","start_url":".","display":"standalone","background_color":"%23f3ede1","theme_color":"%23f3ede1","icons":[{"src":"data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22%3E%3Crect width=%22192%22 height=%22192%22 fill=%22%23221f19%22/%3E%3Cpath d=%22M24 150 Q72 90 96 96 T168 42%22 fill=%22none%22 stroke=%22%23a9601f%22 stroke-width=%228%22/%3E%3C/svg%3E","sizes":"192x192","type":"image/svg+xml"}]}'>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ede1; --panel:#ece3d2; --ink:#221f19; --ink-soft:#5e584c;
+    --line:#d6c9b0; --ochre:#a9601f; --ochre-soft:rgba(169,96,31,.13);
+    --slate:#566668; --slate-soft:rgba(86,102,104,.13);
+    --cf:#c2603f; --lim:#c99a3a; --work:#6e8b5b;
+    --serif:"Newsreader",Georgia,serif; --display:"Fraunces",Georgia,serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--serif);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:560px;margin:0 auto;padding:20px 18px 80px}
+  h1{font-family:var(--display);font-weight:500;font-size:28px;line-height:1.05;margin:0;letter-spacing:-.01em}
+  .sub{font-style:italic;color:var(--ink-soft);font-size:15px;margin:6px 0 0}
+  nav{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:18px 0 4px;position:sticky;top:0;background:var(--paper);z-index:5}
+  nav button{flex:1;background:none;border:0;font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--ink-soft);padding:10px 2px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  nav button.on{color:var(--ink);border-bottom-color:var(--ochre)}
+  .panel{display:none}.panel.on{display:block}
+  h3{font-family:var(--display);font-weight:500;font-size:18px;margin:22px 0 8px}
+  .note{font-style:italic;color:var(--ink-soft);font-size:13.5px;margin:6px 0;line-height:1.5}
+  button.act{font-family:var(--mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;
+    background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:9px 12px;color:var(--ink);cursor:pointer;margin:3px 4px 3px 0}
+  button.act:hover{border-color:var(--ochre)}
+  .grid-wrap{position:relative;margin-top:10px;touch-action:none}
+  svg{display:block;width:100%;height:auto;background:#fbf7ee;border:1px solid var(--line);border-radius:4px;user-select:none}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-soft);margin:8px 2px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .legend .zonecount{font-family:var(--mono);font-size:10.5px;width:100%;color:var(--ink-soft);opacity:.85}
+  .axtog{display:flex;gap:4px;margin:6px 0}
+  .axtog button{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
+    background:none;border:1px solid var(--line);border-radius:3px;padding:5px 9px;color:var(--ink-soft);cursor:pointer}
+  .axtog button.on{color:var(--ink);border-color:var(--ochre);background:var(--ochre-soft)}
+  /* edit sheet */
+  .sheet{position:fixed;inset:0;background:rgba(34,31,25,.35);display:none;align-items:flex-end;justify-content:center;z-index:20}
+  .sheet.on{display:flex}
+  .card{background:var(--paper);width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:12px 12px 0 0;padding:18px 18px 30px;box-shadow:0 -4px 30px rgba(0,0,0,.2)}
+  .field{margin:11px 0}
+  .field label{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ochre);display:block;margin-bottom:4px}
+  .field input[type=text],.field textarea,.field select{width:100%;font-family:var(--serif);font-size:15.5px;
+    background:#fbf7ee;border:1px solid var(--line);border-radius:3px;padding:9px 10px;color:var(--ink)}
+  .field textarea{min-height:54px;resize:vertical}
+  .row2{display:flex;gap:10px}.row2>div{flex:1}
+  input:focus,textarea:focus,select:focus,button:focus-visible{outline:2px solid var(--ochre);outline-offset:1px}
+  .flash{font-family:var(--mono);font-size:11px;color:var(--slate);min-height:15px;margin-top:6px}
+  .warn{background:var(--ochre-soft);border:1px solid var(--ochre);border-radius:3px;padding:9px 11px;font-size:13px;color:var(--ink);margin-top:10px}
+  .ref h4{font-family:var(--display);font-size:15.5px;margin:16px 0 4px;font-weight:600}
+  .ref p{font-size:14px;line-height:1.55;margin:4px 0}
+  .ref b{color:var(--ink)}
+  details{border:1px solid var(--line);border-radius:4px;padding:8px 12px;margin:8px 0;background:#fbf7ee}
+  summary{font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);cursor:pointer}
+  .small{font-size:12.5px;color:var(--ink-soft)}
+  input[type=file]{font-size:13px;margin:6px 0}
+</style>
+
+<div class="wrap">
+  <h1>The Standing Map</h1>
+  <p class="sub">Effort × time. What's movable, by whom, and what to stop fighting. Tended a few times a year.</p>
+
+  <nav>
+    <button data-tab="map" class="on">Map</button>
+    <button data-tab="read">Read</button>
+    <button data-tab="ref">Reference</button>
+    <button data-tab="data">Data</button>
+  </nav>
+
+  <!-- MAP -->
+  <section class="panel on" id="map">
+    <p class="note">Tap an empty spot to place an actant. Drag a dot to move it. Tap a dot to name and tune it. Drag the dashed line's ends to set where "won't move" begins.</p>
+    <div class="axtog" id="coltog">
+      <span class="small" style="align-self:center;margin-right:4px">colour:</span>
+      <button data-col="zone" class="on">zone</button>
+      <button data-col="effect">effect</button>
+      <button data-col="whole">whole</button>
+      <button id="focusBtn" style="margin-left:8px">focus: mine to move</button>
+    </div>
+    <div class="grid-wrap"><svg id="grid" viewBox="0 0 360 360"></svg></div>
+    <div class="legend" id="legend"></div>
+    <button class="act" id="addBtn">+ Add actant</button>
+    <div class="warn" id="storewarn" style="display:none"></div>
+  </section>
+
+  <!-- READ -->
+  <section class="panel" id="read">
+    <p class="note">Seasonal read. Abductive lenses, not a procedure. Write in prose; add a new dated read each season.</p>
+    <button class="act" id="newRead">+ New seasonal read</button>
+    <div id="reads"></div>
+  </section>
+
+  <!-- REFERENCE -->
+  <section class="panel ref" id="ref">
+    <details><summary>The seven actions (six aren't the change)</summary>
+      <p><b>Compass Rose</b> — shift the cost so change becomes likelier later (the default).<br>
+      <b>Monitor</b> — just watch. <b>Conditional</b> — something else first. <b>Request</b> — needs others (liminal).<br>
+      <b>Research</b> — needs looking into. <b>Stabilise</b> — it's good, hold it. <b>Trigger</b> — actually make the change (the only one that is).</p></details>
+    <details><summary>Constraints (not Theory of Constraints)</summary>
+      <p>governing / enabling · robust: rigid, elastic, tether · resilient: permeable, phase-shift, <b>dark</b> (you see the effect, not the cause) · connecting / containing (rewire connections first; formalise into containers only once proven).</p></details>
+    <details><summary>Constructors (provisional)</summary>
+      <p>designed / emergent · ritual, habit, custom &amp; practice, role, process, catalyst · collage (parts already mean something → more) vs mosaic (meaningless parts → meaning via skill).</p></details>
+    <details><summary>The metaphors (for the seasonal read)</summary>
+      <p><b>estuary</b> the productive mixing zone · <b>fjordic</b> structural and prior — shape set before the season, from above the zone; effort inside won't shift it, only change the boundary or accept the geometry (stable) · <b>deltic</b> dynamic and accumulative — silt from your own past commitments; don't dig it out, find and protect the live channels (progressive, shrinks if left) · <b>compound</b> fjordic above + deltic below = airless middle; head for the margins · <b>salt marsh</b> illegible boundary roles (protect, don't resolve) · <b>flood plain</b> overflow that enriched (don't concrete over). <b>Fjordic and deltic need opposite moves</b> — name which before deciding what to do. <b>Perdurability:</b> stay generatively engaged through disturbance rather than withdrawing into safety; robust survives, resilient returns, anti-fragile gains. Under all: what's preventing movement, and what substrate would let serendipity back in?</p></details>
+    <details><summary>Zones &amp; effect</summary>
+      <p><b>counterfactual</b> won't move, map around · <b>liminal</b> needs others (Request/Monitor) · <b>workable</b> yours to move.<br>
+      Effect (Sanford): <b>value-adding</b> regenerates · <b>sustaining</b> holds steady · <b>extracting</b> depletes.</p></details>
+    <details><summary>How this fits</summary>
+      <p>Two reads, one substrate: Fragments reads what's <i>alive or depleting</i>; this map reads what's <i>movable</i>. The best probes sit where they overlap. Probes live in the xlsx workbook; this tool is the map. Download the JSON each seasonal read.</p></details>
+  </section>
+
+  <!-- DATA -->
+  <section class="panel" id="data">
+
+    <div id="syncBox" style="border:1px solid var(--line);border-radius:5px;padding:14px 15px;margin-bottom:6px">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px">
+        <span id="syncDot" style="width:10px;height:10px;border-radius:50%;background:var(--ink-soft);flex:none"></span>
+        <b style="font-family:var(--mono);font-size:12px;letter-spacing:.04em" id="syncLabel">Local only</b>
+        <span id="syncWhen" class="small" style="margin-left:auto"></span>
+      </div>
+      <p id="syncMsg" class="small" style="line-height:1.5;margin:0 0 10px">Your map is saved on this device. Connect Google Drive to keep an off-device copy that syncs across devices and survives anything happening to this one.</p>
+      <div id="syncConnect">
+        <input id="gClientId" placeholder="Google OAuth Client ID" style="width:100%;box-sizing:border-box;font-family:var(--mono);font-size:11px;padding:9px;border:1px solid var(--line);border-radius:3px;margin-bottom:8px">
+        <label class="small" style="display:flex;align-items:center;gap:7px;margin-bottom:9px"><input type="checkbox" id="gCsv" checked> also keep a spreadsheet-shaped <b>estuarine-map.csv</b> in Drive</label>
+        <button class="act" id="gConnect" style="margin:0">Connect Google Drive</button>
+        <p class="small" style="margin:8px 0 0">One-time setup. Uses the same Google OAuth Client ID as the Fragments tool — you can reuse it.</p>
+      </div>
+      <div id="syncManage" style="display:none">
+        <button class="act" id="gReconnect" style="margin:0 6px 0 0;display:none">Reconnect</button>
+        <button class="act" id="gSyncNow" style="margin:0 6px 0 0">Sync now</button>
+        <button class="act" id="gDisconnect" style="margin:0;color:#9a4a2a">Disconnect</button>
+      </div>
+    </div>
+
+    <p class="note">The tool holds your map for convenience. The Drive file (or a downloaded file) is the real backup.</p>
+    <button class="act" id="dlJson">Download JSON (full backup)</button>
+    <button class="act" id="cpJson">Copy JSON</button>
+    <button class="act" id="dlCsv">Download CSV</button>
+    <button class="act" id="dlReadsCsv">Download seasonal reads CSV</button>
+    <div class="flash" id="dflash"></div>
+    <div id="nudge" class="small" style="margin-top:8px;line-height:1.5"></div>
+    <h3>Import</h3>
+    <p class="note">Load a JSON you exported before. A backup is taken first. Merge keeps both; Replace swaps everything.</p>
+    <input type="file" id="impFile" accept="application/json,.json">
+    <div><button class="act" id="impMerge">Import &amp; merge</button><button class="act" id="impReplace">Import &amp; replace</button></div>
+    <div class="flash" id="iflash"></div>
+    <div class="warn" id="storewarn" style="display:none"></div>
+  </section>
+</div>
+
+<!-- EDIT SHEET -->
+<div class="sheet" id="sheet"><div class="card" id="card"></div></div>
+
+<script>
+const SCHEMA=1, GRID=360, M=40, LO=1, HI=10;
+const SEVEN=["Compass Rose","Monitor","Conditional","Request","Research","Stabilise","Trigger"];
+const WHOLES=["self","kin","community","Country"];
+const MOVES_DEFAULT="Compass Rose";
+let storageOK=true, actants=[], reads=[], cfg={schemaVersion:SCHEMA,cfx1:4,cfy1:10,cfx2:10,cfy2:4,colour:"zone"}, lastBackup=0;
+let dragId=null, dragKind=null, moved=false, editId=null;
+
+const SEED=[
+ {name:"Cost of housing where I live",type:"constraint",subtype:"rigid",connect:"—",effort:9,time:9,stance:"necessity",move:"Monitor",effect:"extracting",whole:"self",notes:"example — replace with your own"},
+ {name:"Class pay rates (venue-set)",type:"constraint",subtype:"governing",connect:"containing",effort:8,time:7,stance:"necessity",move:"Request",effect:"sustaining",whole:"self",notes:"needs others — liminal"},
+ {name:"Few inbound coaching leads",type:"constraint",subtype:"enabling",connect:"connecting",effort:5,time:4,stance:"vitality",move:"Compass Rose",effect:"value-adding",whole:"community",notes:"lower the cost of being found"},
+ {name:"Fixed weekly class timetable",type:"constructor",subtype:"process",connect:"containing",effort:6,time:5,stance:"necessity",move:"Stabilise",effect:"sustaining",whole:"community",notes:"income engine — hold it"},
+ {name:"Food-prep ritual",type:"constructor",subtype:"ritual",connect:"—",effort:2,time:2,stance:"necessity",move:"Stabilise",effect:"value-adding",whole:"self",notes:"pays for itself — protect"},
+ {name:"Publishing system (to build)",type:"constructor",subtype:"designed",connect:"connecting",effort:4,time:4,stance:"vitality",move:"Trigger",effect:"value-adding",whole:"community",notes:"the one effortful move"},
+ {name:"Platform fees",type:"constraint",subtype:"rigid",connect:"—",effort:3,time:3,stance:"necessity",move:"Trigger",effect:"extracting",whole:"self",notes:"cheap + fast to drop"}
+];
+
+const READ_PROMPTS=[
+ ["Where did 'more like this' cluster?","from the Fragments read — conditions, not a poster","cluster"],
+ ["Did this read surprise me, or only confirm what I'd already decided?","if nothing surprised, suspect I'm projecting the frame, not reading the field","surprise"],
+ ["The edges — which few moments didn't fit, and which did I mark ★?","two channels: the instrument's outlier tail and my own 'this matters'; read where they diverge","edges"],
+ ["Did the season's probes move anything?","read the portfolio as a vector","probes"],
+ ["Fjordic? A constraint set before the season, from above the zone — a lease, a body's limit, an arrangement.","structural and prior; effort inside won't shift it. The only moves change the boundary or accept the geometry. Relatively stable.","fjordic"],
+ ["Deltic? Silt from my own accumulated commitments and past successes turned obligation.","dynamic and accumulative; don't dig out the backlog. Find the live channels still flowing and keep them from silting. Progressive — it shrinks if left.","deltic"],
+ ["Perdurability — am I staying generatively engaged through disturbance, or withdrawing into a safety that's quietly costing me fertility?","robust survives unchanged; resilient returns to form; anti-fragile gains. Protection that becomes withdrawal stops being generative. Sits against 'protect, don't push'.","perdurable"],
+ ["Salt marsh — what am I draining that I should protect?","illegible, boundary-spanning activity","saltmarsh"],
+ ["Flood plain — what spilled over and enriched?","don't concrete it over","floodplain"],
+ ["Nested wholes — how are kin, community, the field faring?","what does reciprocity ask of me?","wholes"],
+ ["Country / this place — how is it faring?","what does right relationship ask? relational and local, never extractive","country"],
+ ["What's preventing movement?","the real estuarine question — and the move isn't to exhort openness but to build a substrate disposed to serendipity: conditions where collision and the unfamiliar are built in","preventing"],
+ ["Coupling-check — where did my reader diverge?","did they read in their own words before placing? the contradictor you can't be for yourself","coupling"],
+ ["What did the practice teach me to pass on?","teaching residue accruing","teaching"]
+];
+/* legacy positional order (pre-key), for one-time migration of saved reads */
+const READ_LEGACY_ORDER=["cluster","edges","probes","stuck","saltmarsh","floodplain","wholes","country","preventing","coupling","teaching"];
+function migrateAnswers(arr){
+  // legacy reads stored answers as a positional array against the old 11-prompt order.
+  // map each non-empty answer onto its stable key; unknown indices are dropped safely.
+  let out={};
+  if(Array.isArray(arr)) arr.forEach((v,i)=>{ const k=READ_LEGACY_ORDER[i]; if(k&&v!=null&&v!=='') out[k]=v; });
+  else if(arr&&typeof arr==='object') out=Object.assign({},arr);
+  // the single 'stuck' prompt was split into fjordic + deltic; keep any old text (surface under deltic)
+  if(out.stuck && !out.deltic){ out.deltic=out.stuck; }
+  delete out.stuck;
+  return out;
+}
+
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function vx(t){return M+((t-LO)/(HI-LO))*(GRID-2*M);}            // time -> x
+function vy(e){return (GRID-M)-((e-LO)/(HI-LO))*(GRID-2*M);}     // effort -> y
+function inv(px,py){return {time:clamp(LO+((px-M)/(GRID-2*M))*(HI-LO),LO,HI), effort:clamp(LO+(((GRID-M)-py)/(GRID-2*M))*(HI-LO),LO,HI)};}
+
+/* which side of the counterfactual line; >0 means top-right (counterfactual side) */
+function cfSide(time,effort){
+  const x=vx(time),y=vy(effort),x1=vx(cfg.cfx1),y1=vy(cfg.cfy1),x2=vx(cfg.cfx2),y2=vy(cfg.cfy2);
+  return ((x2-x1)*(y-y1)-(y2-y1)*(x-x1)); // sign relative to line
+}
+function autoZone(a){
+  const s=cfSide(a.time,a.effort);
+  if(s<0) return "counterfactual";       // above/right of line
+  // liminal = near the line on the workable side
+  const x=vx(a.time),y=vy(a.effort),x1=vx(cfg.cfx1),y1=vy(cfg.cfy1),x2=vx(cfg.cfx2),y2=vy(cfg.cfy2);
+  const len=Math.hypot(x2-x1,y2-y1)||1, dist=Math.abs(s)/len;
+  return dist<34?"liminal":"workable";
+}
+function zoneOf(a){return a.zone||autoZone(a);}
+
+const COL={zone:{counterfactual:"var(--cf)",liminal:"var(--lim)",workable:"var(--work)"},
+  effect:{"value-adding":"var(--work)","sustaining":"var(--lim)","extracting":"var(--cf)"},
+  whole:{self:"var(--slate)",kin:"#7a6f9e",community:"var(--ochre)",Country:"var(--work)"}};
+function colourOf(a){
+  if(cfg.colour==="zone") return COL.zone[zoneOf(a)]||"var(--ink-soft)";
+  if(cfg.colour==="effect") return COL.effect[a.effect]||"var(--ink-soft)";
+  return COL.whole[a.whole]||"var(--ink-soft)";
+}
+
+/* ---------- render grid ---------- */
+function draw(){
+  const svg=document.getElementById('grid');
+  let s='';
+  // zone shading from current line: counterfactual region (top-right of line)
+  const x1=vx(cfg.cfx1),y1=vy(cfg.cfy1),x2=vx(cfg.cfx2),y2=vy(cfg.cfy2);
+  s+=`<polygon points="${x1.toFixed(0)},${y1.toFixed(0)} ${x2.toFixed(0)},${y2.toFixed(0)} ${(GRID-M)},${M} " fill="var(--cf)" fill-opacity="0.07"/>`;
+  s+=`<polygon points="${x1.toFixed(0)},${y1.toFixed(0)} ${(GRID-M)},${M} ${(GRID-M)},${(GRID-M)} ${x2.toFixed(0)},${y2.toFixed(0)}" fill="var(--cf)" fill-opacity="0.07"/>`;
+  // axes
+  s+=`<line x1="${M}" y1="${GRID-M}" x2="${GRID-M}" y2="${GRID-M}" stroke="var(--line)"/>`;
+  s+=`<line x1="${M}" y1="${M}" x2="${M}" y2="${GRID-M}" stroke="var(--line)"/>`;
+  for(let g=2;g<=10;g+=2){const gx=vx(g),gy=vy(g);
+    s+=`<line x1="${gx}" y1="${M}" x2="${gx}" y2="${GRID-M}" stroke="var(--line)" stroke-opacity=".4"/>`;
+    s+=`<line x1="${M}" y1="${gy}" x2="${GRID-M}" y2="${gy}" stroke="var(--line)" stroke-opacity=".4"/>`;}
+  s+=`<text x="${GRID-M}" y="${GRID-12}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--ink-soft)">time to change →</text>`;
+  s+=`<text x="${M-6}" y="${M+4}" text-anchor="start" font-family="var(--mono)" font-size="10" fill="var(--ink-soft)" transform="rotate(-90 ${M-6} ${M+4})">effort to change →</text>`;
+  // counterfactual line + handles
+  s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--cf)" stroke-width="1.6" stroke-dasharray="6 5"/>`;
+  s+=`<circle class="cfh" data-h="1" cx="${x1}" cy="${y1}" r="9" fill="var(--cf)" fill-opacity=".25" stroke="var(--cf)"/>`;
+  s+=`<circle class="cfh" data-h="2" cx="${x2}" cy="${y2}" r="9" fill="var(--cf)" fill-opacity=".25" stroke="var(--cf)"/>`;
+  // actants
+  actants.forEach(a=>{
+    const x=vx(a.time),y=vy(a.effort),c=colourOf(a);
+    const z=zoneOf(a);
+    const dim = focusWorkable && z==='counterfactual';
+    const op = dim? .18 : .85;
+    s+=`<circle class="dot" data-id="${a.id}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7" fill="${c}" fill-opacity="${op}" stroke="#fbf7ee" stroke-width="1.5"/>`;
+    const label=(a.name||'(unnamed)').slice(0,22);
+    const left=x>GRID-120;
+    s+=`<text x="${(left?x-11:x+11).toFixed(1)}" y="${(y+3.5).toFixed(1)}" text-anchor="${left?'end':'start'}" font-family="var(--mono)" font-size="9.5" fill="var(--ink)" fill-opacity="${dim?.3:1}">${esc(label)}</text>`;
+  });
+  svg.innerHTML=s;
+  drawLegend();
+}
+let focusWorkable=false;
+function zoneCounts(){ const c={workable:0,liminal:0,counterfactual:0}; actants.forEach(a=>{const z=zoneOf(a); if(c[z]!=null)c[z]++;}); return c; }
+function drawLegend(){
+  const L=document.getElementById('legend'), map=COL[cfg.colour];
+  const zc=zoneCounts();
+  L.innerHTML=Object.keys(map).map(k=>`<span><i style="background:${map[k]}"></i>${k}</span>`).join('')
+    +`<span class="zonecount">${zc.workable} workable · ${zc.liminal} liminal · ${zc.counterfactual} counterfactual</span>`;
+}
+function esc(t){return (t||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* ---------- pointer: drag dots, handles, tap empty to add ---------- */
+function svgPt(ev){const svg=document.getElementById('grid');const r=svg.getBoundingClientRect();
+  const cx=(ev.touches?ev.touches[0].clientX:ev.clientX)-r.left, cy=(ev.touches?ev.touches[0].clientY:ev.clientY)-r.top;
+  return {x:cx*(GRID/r.width), y:cy*(GRID/r.height)};}
+function onDown(ev){
+  const t=ev.target;
+  if(t.classList.contains('cfh')){dragKind='cf';dragId=t.getAttribute('data-h');moved=false;ev.preventDefault();return;}
+  if(t.classList.contains('dot')){dragKind='dot';dragId=t.getAttribute('data-id');moved=false;ev.preventDefault();return;}
+}
+function onMove(ev){
+  if(!dragKind)return; ev.preventDefault(); moved=true;
+  const p=svgPt(ev), v=inv(p.x,p.y);
+  if(dragKind==='cf'){ if(dragId==='1'){cfg.cfx1=v.time;cfg.cfy1=v.effort;} else {cfg.cfx2=v.time;cfg.cfy2=v.effort;} draw(); }
+  else { const a=actants.find(x=>x.id===dragId); if(a){a.time=v.time;a.effort=v.effort; if(!a.zoneLocked)a.zone=null; draw();} }
+}
+async function onUp(ev){
+  if(dragKind==='cf'&&moved){await persistCfg();}
+  if(dragKind==='dot'){ const a=actants.find(x=>x.id===dragId);
+    if(a){ if(moved){await persistActant(a);} else {openEdit(a.id);} } }
+  dragKind=null;dragId=null;
+}
+function bindGrid(){
+  const svg=document.getElementById('grid');
+  ['mousedown','touchstart'].forEach(e=>svg.addEventListener(e,onDown,{passive:false}));
+  ['mousemove','touchmove'].forEach(e=>window.addEventListener(e,onMove,{passive:false}));
+  ['mouseup','touchend'].forEach(e=>window.addEventListener(e,onUp));
+  // tap empty space to add
+  svg.addEventListener('click',ev=>{
+    if(ev.target.classList.contains('dot')||ev.target.classList.contains('cfh'))return;
+    const p=svgPt(ev); if(p.x<M-4||p.x>GRID-M+10||p.y<M-10||p.y>GRID-M+4)return;
+    const v=inv(p.x,p.y); addActant(v.time,v.effort);
+  });
+}
+
+/* ---------- edit sheet ---------- */
+function field(label,inner){return `<div class="field"><label>${label}</label>${inner}</div>`;}
+function sel(name,opts,val){return `<select data-k="${name}"><option value=""></option>`+opts.map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join('')+`</select>`;}
+function openEdit(id){
+  const a=actants.find(x=>x.id===id); if(!a)return; editId=id;
+  const c=document.getElementById('card');
+  c.innerHTML=
+    field('Actant',`<input type="text" data-k="name" value="${esc(a.name)}">`)+
+    `<div class="row2"><div>`+field('Type',sel('type',['constraint','constructor'],a.type))+`</div><div>`+field('Sub-type',`<input type="text" data-k="subtype" value="${esc(a.subtype||'')}">`)+`</div></div>`+
+    `<div class="row2"><div>`+field('Connect / contain',sel('connect',['connecting','containing','—'],a.connect))+`</div><div>`+field('Stance',sel('stance',['necessity','vitality'],a.stance))+`</div></div>`+
+    `<div class="row2"><div>`+field('Effort (1–10)',`<input type="text" data-k="effort" value="${a.effort.toFixed(1)}">`)+`</div><div>`+field('Time (1–10)',`<input type="text" data-k="time" value="${a.time.toFixed(1)}">`)+`</div></div>`+
+    field('Zone (blank = auto from position: '+autoZone(a)+')',sel('zone',['counterfactual','liminal','workable'],a.zone||''))+
+    `<div class="row2"><div>`+field('Move',sel('move',SEVEN,a.move))+`</div><div>`+field('Effect',sel('effect',['value-adding','sustaining','extracting'],a.effect))+`</div></div>`+
+    field('Whole / field served',sel('whole',WHOLES,a.whole))+
+    field('Notes',`<textarea data-k="notes">${esc(a.notes||'')}</textarea>`)+
+    `<div style="margin-top:14px"><button class="act" id="saveEdit">Save</button><button class="act" id="delEdit" style="color:var(--cf)">Delete</button><button class="act" id="closeEdit">Close</button></div>`;
+  document.getElementById('sheet').classList.add('on');
+  document.getElementById('saveEdit').onclick=saveEdit;
+  document.getElementById('closeEdit').onclick=closeSheet;
+  document.getElementById('delEdit').onclick=async()=>{ if(confirm('Delete this actant?')){actants=actants.filter(x=>x.id!==editId); cacheSaveAll(); drive.queuePush(); closeSheet(); draw();} };
+}
+async function saveEdit(){
+  const a=actants.find(x=>x.id===editId); if(!a)return;
+  document.querySelectorAll('#card [data-k]').forEach(el=>{
+    const k=el.getAttribute('data-k'); let v=el.value;
+    if(k==='effort'||k==='time'){const n=parseFloat(v); a[k]=isNaN(n)?a[k]:clamp(n,LO,HI);}
+    else if(k==='zone'){a.zone=v||null; a.zoneLocked=!!v;}
+    else a[k]=v;
+  });
+  await persistActant(a); closeSheet(); draw();
+}
+function closeSheet(){document.getElementById('sheet').classList.remove('on');editId=null;}
+document.getElementById('sheet').addEventListener('click',e=>{if(e.target.id==='sheet')closeSheet();});
+
+function addActant(time,effort){
+  const a={id:uid(),name:"",type:"",subtype:"",connect:"",effort:effort||5,time:time||5,zone:null,zoneLocked:false,stance:"",move:MOVES_DEFAULT,effect:"",whole:"",notes:""};
+  actants.push(a); draw(); openEdit(a.id);
+}
+document.getElementById('addBtn').onclick=()=>addActant(5,5);
+
+/* colour toggle */
+document.querySelectorAll('#coltog [data-col]').forEach(b=>b.onclick=async()=>{
+  document.querySelectorAll('#coltog [data-col]').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); cfg.colour=b.getAttribute('data-col'); await persistCfg(); draw();
+});
+document.getElementById('focusBtn').onclick=function(){ focusWorkable=!focusWorkable; this.classList.toggle('on',focusWorkable); draw(); };
+
+/* ---------- reads ---------- */
+function renderReads(){
+  const wrap=document.getElementById('reads');
+  if(!reads.length){wrap.innerHTML='<p class="small" style="margin-top:14px">No reads yet. Add one when a season turns.</p>';return;}
+  wrap.innerHTML=reads.slice().sort((a,b)=>b.t-a.t).map(r=>{
+    const d=new Date(r.t).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+    const body=READ_PROMPTS.map(([q,h,key],i)=>`<div class="field"><label>${esc(q)}</label><div class="small" style="margin:-2px 0 4px">${esc(h)}</div><textarea data-read="${r.t}" data-k="${key}">${esc((r.answers&&r.answers[key])||'')}</textarea></div>`).join('');
+    return `<details ${reads.length===1?'open':''}><summary>${d}</summary><div style="margin-top:8px">${body}<div><button class="act" data-delread="${r.t}" style="color:var(--cf)">Delete read</button></div></div></details>`;
+  }).join('');
+  wrap.querySelectorAll('textarea[data-read]').forEach(ta=>ta.addEventListener('change',async()=>{
+    const t=+ta.getAttribute('data-read'), k=ta.getAttribute('data-k'), r=reads.find(x=>x.t===t);
+    if(r){ if(!r.answers||Array.isArray(r.answers))r.answers=migrateAnswers(r.answers); r.answers[k]=ta.value; await persistRead(r); }
+  }));
+  wrap.querySelectorAll('[data-delread]').forEach(b=>b.onclick=async()=>{
+    const t=+b.getAttribute('data-delread'); if(confirm('Delete this seasonal read?')){reads=reads.filter(x=>x.t!==t); cacheSaveAll(); drive.queuePush(); renderReads();}
+  });
+}
+document.getElementById('newRead').onclick=async()=>{const r={t:Date.now(),answers:{}};reads.push(r);await persistRead(r);renderReads();};
+
+/* ---------- storage ---------- */
+function bundle(){return {tool:'estuarine',schemaVersion:SCHEMA,exported:Date.now(),config:cfg,actants:actants,reads:reads};}
+
+/* ============================================================
+   STORAGE — local cache (always-on) + Google Drive (offsite truth)
+   Same model as the Fragments instrument: every change writes to the
+   local cache instantly; a debounced push sends the whole map to one
+   JSON file in your Drive. Drive is authoritative; cache is the fast,
+   offline layer. Sync (and any sign-in) only happens after a change
+   or when you tap Reconnect — never on open.
+   ============================================================ */
+const LS_PREFIX='estu_';
+const DRIVE_FILENAME='estuarine-map.json';
+const DRIVE_CSV_FILENAME='estuarine-map.csv';
+const DRIVE_READS_CSV_FILENAME='estuarine-reads.csv';
+const SCOPE='https://www.googleapis.com/auth/drive.file';
+
+const mem={}; let lsOK=true;
+try{ const k='__t'+Date.now(); localStorage.setItem(k,'1'); localStorage.removeItem(k); }catch{ lsOK=false; }
+const cache={
+  get(k){ try{ return lsOK?localStorage.getItem(LS_PREFIX+k):(mem[k]??null); }catch{ return mem[k]??null; } },
+  set(k,v){ try{ if(lsOK)localStorage.setItem(LS_PREFIX+k,v); else mem[k]=v; }catch{ mem[k]=v; lsOK=false; } },
+  del(k){ try{ if(lsOK)localStorage.removeItem(LS_PREFIX+k); }catch{} delete mem[k]; },
+};
+function cacheSaveAll(){ cache.set('map',JSON.stringify(bundle())); cache.set('backup',JSON.stringify(bundle())); }
+
+async function snapshot(){ /* covered by cacheSaveAll */ }
+async function persistActant(a){ cacheSaveAll(); drive.queuePush(); }
+async function persistRead(r){ cacheSaveAll(); drive.queuePush(); }
+async function persistCfg(){ cacheSaveAll(); drive.queuePush(); }
+
+async function load(){
+  storageOK=true;
+  let saved=null;
+  try{ const m=cache.get('map'); if(m) saved=JSON.parse(m); }catch{}
+  if(saved){
+    if(saved.config) cfg=Object.assign({},cfg,saved.config);
+    actants=(saved.actants||[]).map(migrateActant);
+    reads=(saved.reads||[]).map(r=>{ r.answers=migrateAnswers(r.answers||{}); return r; });
+  }
+  // seed only on a genuinely first run (no saved map, not seeded before)
+  if(!saved && !actants.length && cache.get('seeded')!=='1'){
+    actants=SEED.map(s=>Object.assign({id:uid(),zone:null,zoneLocked:false},s));
+    cache.set('seeded','1'); cacheSaveAll();
+  }
+  document.querySelectorAll('#coltog [data-col]').forEach(x=>x.classList.toggle('on',x.getAttribute('data-col')===cfg.colour));
+  draw(); renderReads();
+  drive.initFromSaved();           // prepare GIS, but DO NOT sync on open
+  renderSync();
+}
+async function checkSeeded(){ /* no-op: seeding handled in load via cache */ }
+
+/* ---- Google Drive sync engine (silent-on-open; reconnect on demand) ---- */
+const drive=(function(){
+  let clientId=cache.get('gdrive_client_id')||'';
+  let fileId=cache.get('gdrive_file_id')||'';
+  let csvFileId=cache.get('gdrive_csv_id')||'';
+  let readsCsvFileId=cache.get('gdrive_reads_csv_id')||'';
+  let token=null, tokenExp=0, tokenClient=null;
+  let pushTimer=null, status='idle', lastSync=cache.get('gdrive_lastsync')||'';
+
+  function isConfigured(){ return !!clientId; }
+  function setStatus(s){ status=s; renderSync(); }
+  function getStatus(){ return status; }
+  function getLastSync(){ return lastSync; }
+
+  function loadGIS(){
+    return new Promise((res,rej)=>{
+      if(window.google&&google.accounts&&google.accounts.oauth2){return res();}
+      const s=document.createElement('script');
+      s.src='https://accounts.google.com/gsi/client'; s.async=true; s.defer=true;
+      s.onload=()=>res(); s.onerror=()=>rej(new Error('Could not load Google sign-in'));
+      document.head.appendChild(s);
+    });
+  }
+  function initFromSaved(){ if(clientId) loadGIS().catch(()=>{}); }
+
+  function getToken(mode){
+    return new Promise(async(res)=>{
+      if(token&&Date.now()<tokenExp-60000) return res(token);
+      try{ await loadGIS(); }catch(e){ return res(null); }
+      if(!clientId) return res(null);
+      let settled=false; const finish=v=>{ if(!settled){settled=true;res(v);} };
+      if(!tokenClient){
+        tokenClient=google.accounts.oauth2.initTokenClient({
+          client_id:clientId, scope:SCOPE, callback:()=>{}, error_callback:()=>finish(null) });
+      }
+      tokenClient.callback=(resp)=>{
+        if(resp&&resp.access_token){ token=resp.access_token; tokenExp=Date.now()+(resp.expires_in||3600)*1000; finish(token); }
+        else finish(null);
+      };
+      try{ tokenClient.requestAccessToken({prompt: mode==='interactive'?'consent':'none'}); }catch(e){ finish(null); }
+    });
+  }
+  async function api(url,opts){
+    const t=await getToken('silent');
+    if(!t){ const e=new Error('reauth'); e.reauth=true; throw e; }
+    opts=opts||{}; opts.headers=Object.assign({},opts.headers,{Authorization:'Bearer '+t});
+    const r=await fetch(url,opts);
+    if(r.status===401){ token=null; const e=new Error('reauth'); e.reauth=true; throw e; }
+    return r;
+  }
+  async function findFile(name){
+    const q=encodeURIComponent(`name='${name}' and trashed=false`);
+    const r=await api(`https://www.googleapis.com/drive/v3/files?q=${q}&spaces=drive&fields=files(id,name,modifiedTime)`);
+    if(!r.ok) throw new Error('Drive search failed ('+r.status+')');
+    const j=await r.json(); return (j.files&&j.files[0])||null;
+  }
+  function multipartBody(meta,content,ct,b){ return `--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n`+JSON.stringify(meta)+`\r\n--${b}\r\nContent-Type: ${ct}\r\n\r\n`+content+`\r\n--${b}--`; }
+  async function writeFile(existingId,name,content,ct){
+    const b='estu_'+Math.random().toString(36).slice(2);
+    const meta=existingId?{}:{name};
+    const url=existingId
+      ? `https://www.googleapis.com/upload/drive/v3/files/${existingId}?uploadType=multipart&fields=id`
+      : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id`;
+    const r=await api(url,{method:existingId?'PATCH':'POST',headers:{'Content-Type':'multipart/related; boundary='+b},body:multipartBody(meta,content,ct,b)});
+    if(!r.ok) throw new Error('Drive write failed ('+r.status+')');
+    return (await r.json()).id;
+  }
+  async function driveRead(id){
+    const r=await api(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`);
+    if(!r.ok) throw new Error('Drive read failed ('+r.status+')');
+    return r.text();
+  }
+  // merge: actants by id, reads by t; remote fills gaps, local wins on collision; never deletes silently
+  function mergeRemote(data){
+    if(data.actants){ const byId={}; (data.actants||[]).forEach(a=>byId[a.id]=migrateActant(a)); actants.forEach(a=>byId[a.id]=a); actants=Object.values(byId); }
+    if(data.reads){ const byT={}; (data.reads||[]).forEach(r=>{r.answers=migrateAnswers(r.answers||{});byT[r.t]=r;}); reads.forEach(r=>byT[r.t]=r); reads=Object.values(byT); }
+    if(data.config) cfg=Object.assign({},data.config,cfg);
+  }
+  function handleErr(e){ if(e&&e.reauth){ setStatus('reauth'); } else setStatus(navigator.onLine?'error':'offline'); }
+
+  async function pull(){
+    if(!clientId) return; setStatus('syncing');
+    try{
+      if(!fileId){ const f=await findFile(DRIVE_FILENAME); if(f){ fileId=f.id; cache.set('gdrive_file_id',fileId); } }
+      if(fileId){ const txt=await driveRead(fileId); let data; try{data=JSON.parse(txt);}catch{data=null;}
+        if(data){ mergeRemote(data); cacheSaveAll(); draw(); renderReads(); } }
+      markSync(); setStatus('synced'); doPush().catch(()=>{});
+    }catch(e){ handleErr(e); }
+  }
+  function queuePush(){ if(!clientId){ setStatus('local'); return; } setStatus('pending'); clearTimeout(pushTimer); pushTimer=setTimeout(()=>doPush().catch(()=>{}),1500); }
+  async function doPush(){
+    if(!clientId) return; if(!navigator.onLine){ setStatus('offline'); return; } setStatus('syncing');
+    try{
+      fileId=await writeFile(fileId,DRIVE_FILENAME,JSON.stringify(bundle(),null,2),'application/json');
+      cache.set('gdrive_file_id',fileId);
+      if(WRITE_CSV){ csvFileId=await writeFile(csvFileId,DRIVE_CSV_FILENAME,toCSV(),'text/csv'); cache.set('gdrive_csv_id',csvFileId);
+        if(reads.length){ readsCsvFileId=await writeFile(readsCsvFileId,DRIVE_READS_CSV_FILENAME,readsCSV(),'text/csv'); cache.set('gdrive_reads_csv_id',readsCsvFileId); } }
+      markSync(); setStatus('synced'); markBackup();
+    }catch(e){ handleErr(e); }
+  }
+  function markSync(){ lastSync=new Date().toISOString(); cache.set('gdrive_lastsync',lastSync); }
+  async function reconnect(){ setStatus('syncing'); const t=await getToken('interactive'); if(!t){ setStatus('reauth'); return false; } await pull(); return true; }
+  async function connect(newClientId){
+    clientId=(newClientId||'').trim(); cache.set('gdrive_client_id',clientId);
+    fileId=''; cache.set('gdrive_file_id',''); tokenClient=null; token=null; tokenExp=0;
+    await loadGIS(); const t=await getToken('interactive'); if(!t) throw new Error('Sign-in was cancelled or blocked.');
+    await pull(); await doPush(); return true;
+  }
+  function disconnect(){
+    try{ if(token) google.accounts.oauth2.revoke(token,()=>{}); }catch{}
+    token=null; clientId=''; fileId=''; csvFileId=''; readsCsvFileId='';
+    ['gdrive_client_id','gdrive_file_id','gdrive_csv_id','gdrive_reads_csv_id','gdrive_lastsync'].forEach(k=>cache.del(k));
+    setStatus('local');
+  }
+  return { isConfigured,initFromSaved,connect,reconnect,disconnect,pull,queuePush,getStatus,getLastSync };
+})();
+let WRITE_CSV = (cache.get('gdrive_write_csv')!=='0');
+window.addEventListener('online',()=>{ if(drive.isConfigured()) drive.queuePush(); });
+
+/* backup nudge */
+async function loadLastBackup(){ try{ lastBackup=+(cache.get('lastBackup')||0); }catch{ lastBackup=0; } renderNudge(); }
+async function markBackup(){ lastBackup=Date.now(); cache.set('lastBackup',String(lastBackup)); renderNudge(); }
+function renderNudge(){const n=document.getElementById('nudge');if(!n)return;
+  if(!lastBackup){n.textContent='Not yet downloaded. The only loss-proof copy is a file in your own drive — download the JSON, or connect Drive above.';return;}
+  const days=Math.floor((Date.now()-lastBackup)/86400000);
+  n.textContent='Last saved '+(days===0?'today':days+' day'+(days>1?'s':'')+' ago')+'. The browser copy is convenience; the Drive/downloaded file is the real backup.';
+}
+
+/* ---------- sync status UI ---------- */
+function renderSync(){
+  const dot=document.getElementById('syncDot'), label=document.getElementById('syncLabel'),
+        msg=document.getElementById('syncMsg'), when=document.getElementById('syncWhen'),
+        connect=document.getElementById('syncConnect'), manage=document.getElementById('syncManage');
+  if(!dot)return;
+  const configured=drive.isConfigured(), s=drive.getStatus();
+  connect.style.display=configured?'none':'block'; manage.style.display=configured?'block':'none';
+  const map={ idle:['#3f7d4f','Synced to Drive'], local:['var(--ink-soft)','Local only'],
+    pending:['#c9a227','Saving…'], syncing:['#c9a227','Syncing…'], synced:['#3f7d4f','Synced to Drive'],
+    offline:['#9a4a2a','Offline — will sync when online'], error:['#9a4a2a','Sync error — tap Sync now'],
+    reauth:['#9a4a2a','Saved here — tap Reconnect to back up'] };
+  const key=configured?(s==='idle'?'synced':s):'local'; const pair=map[key]||map.local;
+  dot.style.background=pair[0]; label.textContent=pair[1];
+  const rc=document.getElementById('gReconnect'); if(rc) rc.style.display=(configured&&key==='reauth')?'inline-block':'none';
+  if(configured){
+    msg.textContent=(key==='reauth')
+      ? 'Your map is safe on this device. Your Google session has expired — tap Reconnect to push it to Drive. Nothing is lost meanwhile.'
+      : 'Your map lives in estuarine-map.json in your Google Drive. This device keeps a fast local copy and syncs up after you change something.';
+    const ls=drive.getLastSync(); when.textContent=ls?('last sync '+timeAgo(new Date(ls).getTime())):'';
+  } else { when.textContent=''; }
+}
+function timeAgo(t){ const s=Math.floor((Date.now()-t)/1000); if(s<60)return'just now'; const m=Math.floor(s/60); if(m<60)return m+'m ago'; const h=Math.floor(m/60); if(h<24)return h+'h ago'; return Math.floor(h/24)+'d ago'; }
+
+/* ---------- export / import ---------- */
+function toCSV(){
+  const head=['name','type','subtype','connect_contain','effort','time','zone','stance','move','effect','whole','notes'];
+  const q=v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`;
+  const rows=actants.map(a=>[a.name,a.type,a.subtype,a.connect,(+a.effort).toFixed(1),(+a.time).toFixed(1),zoneOf(a),a.stance,a.move,a.effect,a.whole,a.notes].map(q).join(','));
+  return [head.join(','),...rows].join('\n');
+}
+// one row per seasonal read; columns = read date + each prompt's answer, keyed by prompt id
+function readsCSV(){
+  const keys=READ_PROMPTS.map(p=>p[2]);
+  const head=['read_date','read_started',...keys];
+  const q=v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`;
+  const ordered=[...reads].sort((a,b)=>a.t-b.t);
+  const rows=ordered.map(r=>{
+    const d=new Date(r.t);
+    const ans=(r.answers&&typeof r.answers==='object')?r.answers:migrateAnswers(r.answers||{});
+    return [d.toISOString().slice(0,10), d.toISOString(), ...keys.map(k=>ans[k]||'')].map(q).join(',');
+  });
+  return [head.join(','),...rows].join('\n');
+}
+function dlFile(name,text,type){
+  try{ const b=new Blob([text],{type});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;a.rel='noopener';a.style.display='none';document.body.appendChild(a);a.click();setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(u);},4000);return true;
+  }catch(e){ try{ const b=new Blob([text],{type});const w=window.open(URL.createObjectURL(b),'_blank'); if(w) return true; }catch(_){} alert('Download was blocked here. Copy the JSON instead, or open the app from your home screen.'); return false; }
+}
+const copy=(txt,el)=>navigator.clipboard.writeText(txt).then(()=>{el.textContent='Copied.';setTimeout(()=>el.textContent='',1600);},()=>{el.textContent='Copy failed.';});
+document.getElementById('dlJson').onclick=()=>{const d=new Date().toISOString().slice(0,10);dlFile('estuarine-map-'+d+'.json',JSON.stringify(bundle(),null,2),'application/json');markBackup();document.getElementById('dflash').textContent='Downloaded.';setTimeout(()=>document.getElementById('dflash').textContent='',1600);};
+document.getElementById('cpJson').onclick=()=>copy(JSON.stringify(bundle(),null,2),document.getElementById('dflash'));
+document.getElementById('dlCsv').onclick=()=>{dlFile('estuarine-map.csv',toCSV(),'text/csv');markBackup();};
+document.getElementById('dlReadsCsv').onclick=()=>{ if(!reads.length){document.getElementById('dflash').textContent='No seasonal reads yet.';setTimeout(()=>document.getElementById('dflash').textContent='',1600);return;} dlFile('estuarine-reads.csv',readsCSV(),'text/csv');markBackup();document.getElementById('dflash').textContent='Downloaded.';setTimeout(()=>document.getElementById('dflash').textContent='',1600);};
+
+function validBundle(b){return b&&typeof b==='object'&&Array.isArray(b.actants);}
+function migrateActant(a){['name','type','subtype','connect','stance','move','effect','whole','notes'].forEach(k=>{if(!(k in a))a[k]='';});
+  if(typeof a.effort!=='number')a.effort=5; if(typeof a.time!=='number')a.time=5; if(!a.id)a.id=uid(); if(!('zone'in a))a.zone=null; return a;}
+async function importJSON(text,mode){
+  let b;try{b=JSON.parse(text);}catch{return{ok:false,msg:'That file isn\u2019t valid JSON.'};}
+  if(!validBundle(b))return{ok:false,msg:'That doesn\u2019t look like a Standing Map export (no actants found).'};
+  const inA=(b.actants||[]).map(migrateActant), inR=Array.isArray(b.reads)?b.reads:[];
+  if(mode==='replace'){
+    actants=inA.slice(); reads=inR.slice(); if(b.config)cfg=Object.assign({},cfg,b.config);
+  }else{
+    const byId={};actants.forEach(a=>byId[a.id]=a);inA.forEach(a=>byId[a.id]=a);actants=Object.values(byId);
+    const byT={};reads.forEach(r=>byT[r.t]=r);inR.forEach(r=>byT[r.t]=r);reads=Object.values(byT);
+  }
+  cacheSaveAll(); drive.queuePush(); draw(); renderReads();
+  return{ok:true,msg:'Imported '+inA.length+' actant'+(inA.length===1?'':'s')+' ('+mode+'). Total: '+actants.length+'. '+(drive.isConfigured()?'Syncing to Drive.':'Saved locally.')};
+}
+function readFile(){return new Promise((res,rej)=>{const f=document.getElementById('impFile').files[0];if(!f){rej('Choose a file first.');return;}const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej('Could not read that file.');r.readAsText(f);});}
+async function doImport(mode){const fl=document.getElementById('iflash');try{const text=await readFile();if(mode==='replace'&&!confirm('Replace the whole map with the file\u2019s contents? A backup is taken first.'))return;const r=await importJSON(text,mode);fl.textContent=r.msg;}catch(e){fl.textContent=typeof e==='string'?e:'Import failed.';}}
+document.getElementById('impMerge').onclick=()=>doImport('merge');
+document.getElementById('impReplace').onclick=()=>doImport('replace');
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  b.classList.add('on'); document.getElementById(b.getAttribute('data-tab')).classList.add('on');
+});
+
+/* ---- Drive sync controls ---- */
+(function(){
+  const cidInput=document.getElementById('gClientId');
+  const saved=cache.get('gdrive_client_id'); if(saved) cidInput.value=saved;
+  document.getElementById('gCsv').checked=WRITE_CSV;
+  document.getElementById('gCsv').onchange=(e)=>{ WRITE_CSV=e.target.checked; cache.set('gdrive_write_csv',WRITE_CSV?'1':'0'); };
+  document.getElementById('gConnect').onclick=async()=>{
+    const id=cidInput.value.trim(); const msg=document.getElementById('syncMsg');
+    if(!id){ msg.textContent='Paste your Google OAuth Client ID first.'; return; }
+    msg.textContent='Opening Google sign-in…';
+    try{ await drive.connect(id); renderSync(); }
+    catch(e){ msg.textContent='Could not connect: '+(e.message||e)+'. Check the Client ID and that this web address is an authorised origin.'; }
+  };
+  document.getElementById('gSyncNow').onclick=async()=>{ const ok=await drive.reconnect(); if(!ok) renderSync(); };
+  document.getElementById('gReconnect').onclick=async()=>{ await drive.reconnect(); renderSync(); };
+  document.getElementById('gDisconnect').onclick=()=>{ if(confirm('Disconnect Drive? Your map stays on this device and in the Drive file; this just stops syncing here.')){ drive.disconnect(); renderSync(); } };
+})();
+
+/* ---------- init ---------- */
+bindGrid();
+(async()=>{ await checkSeeded(); await load(); await loadLastBackup(); })();
+
+/* offline: inline service worker so the installed app opens with no signal */
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  const swCode=`const C='estu-v1';
+    self.addEventListener('install',e=>self.skipWaiting());
+    self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
+    self.addEventListener('fetch',e=>{const u=new URL(e.request.url);
+      if(e.request.method!=='GET'||u.origin!==location.origin)return;
+      e.respondWith(caches.open(C).then(c=>c.match(e.request).then(hit=>{
+        const net=fetch(e.request).then(r=>{c.put(e.request,r.clone());return r;}).catch(()=>hit);
+        return hit||net; })));});`;
+  try{ const blob=new Blob([swCode],{type:'text/javascript'}); navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{}); }catch(e){}
+}
+</script>
